@@ -1,0 +1,51 @@
+#include "ddm.dkh"
+
+model "batch-api"
+{
+    #include "induxsoft.abstracts.ddm"
+
+    entity "jobsgroup" : "TableModel"
+    {
+        //sys_guid - Id del grupo de trabajos
+        @"name" string (150) unique required
+        @"apikey" string (32) required //digestión MD5 de la contraseña del grupo de trabajos
+    }
+
+    entity "job" : "TableModel"
+    {
+        //sys_guid - Token del trabajo
+        //sys_dtcreated - Marca de tiempo de creación del trabajo
+        //sys_timestamp - Marca de tiempo de última actualización de estado del trabajo
+        //sys_deleted   - Indica si el trabajo fue cancelado, no se puede cancelar un trabajo jstatus=2
+        //sys_user      -Identificador del usuario propietario del trabajo
+
+        @"jp_ref" ref:"jobsgroup" required
+
+        @"program" string(32) required // Identificador del programa que realiza el trabajo
+
+        @"timeout" int              // Tiempo máximo de espera para considerar 
+                                    // que el trabajo está vigente expresado en segundos, 
+                                    // si es cero se asume el tiempo máximo predeterminado de la implementación
+
+        @"jstatus" int required     // 0 - Trabajo en proceso, 1-Pausado, 2-Terminado con éxito, 3-Terminado con errores
+
+        @"progress_type" int required   // Forma como se expresa el progreso,
+                                        // 0-No hay reporte de progreso, 1-Porcentual, 2-Por iteraciones
+
+        @"percentage" decimal(4,1)      // Progreso expresado como porcentaje
+        @"steps"    int                 // Total de pasos o iteraciones del trabajo
+        @"steps_completed"  int         // Pasos o iteraciones completadas
+
+        index "jobuseridx" { field "sys_user" }
+        index "jobnameidx" { field "name" }
+    }
+
+    entity "joblog" : "TableModel"
+    {
+        @"job_ref" ref : "job" required
+        @"note" memo required
+        @"new_percentage" decimal (4,1)
+        @"new_steps_completed" int
+        @"sender" string (32) // Identificador del remitente del registro
+    }
+}
