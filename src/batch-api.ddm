@@ -27,7 +27,7 @@ model "batch-api"
                                     // que el trabajo está vigente expresado en segundos, 
                                     // si es cero se asume el tiempo máximo predeterminado de la implementación
 
-        @"jstatus" int required     // 0 - Trabajo en proceso, 1-Pausado, 2-Terminado con éxito, 3-Terminado con errores
+        @"jstatus" int required     // 0-Trabajo solicitado 1 - Trabajo en proceso, 2-Pausado, 3-Terminado con éxito, 4-Terminado con errores
 
         @"progress_type" int required   // Forma como se expresa el progreso,
                                         // 0-No hay reporte de progreso, 1-Porcentual, 2-Por iteraciones
@@ -36,8 +36,11 @@ model "batch-api"
         @"steps"    int                 // Total de pasos o iteraciones del trabajo
         @"steps_completed"  int         // Pasos o iteraciones completadas
 
+        @"params" memo                  // Objeto JSON con los parámetros de entrada para el trabajo
+        @"result" memo                  // Objeto JSON con el resultado del trabajo
+
         index "jobuseridx" { field "sys_user" }
-        index "jobnameidx" { field "name" }
+        index "jobnameidx" { field "program" }
     }
 
     entity "joblog" : "TableModel"
