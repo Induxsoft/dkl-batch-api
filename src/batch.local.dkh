@@ -1,0 +1,31 @@
+// Funciones para gestionar la información de trabajos en proceso en la base de datos conectada
+#include "dkli.dkh"
+#!
+module
+{
+    batch.loadContextByToken::token
+    {
+        // Regresar un objeto batch_context
+    }
+
+    batch.create::&data
+    {
+        //Crea el registro de un trabajo en estado "Solicitado"
+    }
+
+    batch.start::&context
+    {
+        // Registra la puesta en proceso de un trabajo
+    }
+
+    batch.finishedSuccess::&context
+    {
+        // Registra la terminación exitosa de un trabajo
+    }
+
+    batch.finishedWithErrors::error,context
+    {
+        // Registra la terminación anómala de un trabajo
+    }
+}
+

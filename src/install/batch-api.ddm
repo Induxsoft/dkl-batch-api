@@ -21,6 +21,9 @@ model "batch-api"
 
         @"jp_ref" ref:"jobsgroup" required
 
+        @"start" datetime              //Marca de tiempo de inicio del trabajo
+        @"end" datetime                //marca de tiempo de finalización
+
         @"program" string(32) required // Identificador del programa que realiza el trabajo
 
         @"timeout" int              // Tiempo máximo de espera para considerar 

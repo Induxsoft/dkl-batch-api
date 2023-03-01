@@ -1,0 +1,5 @@
+#!
+// Valores de configuración locales al servidor
+
+@batch_db="batch@server" // Conexión a la base de datos de trabajos
+@batch_base_path="batch"    // Ruta relativa a los binarios de Devkron en donde se encuentran los programas
