@@ -38,6 +38,9 @@ model "batch-api"
         @"percentage" decimal(4,1)      // Progreso expresado como porcentaje
         @"steps"    int                 // Total de pasos o iteraciones del trabajo
         @"steps_completed"  int         // Pasos o iteraciones completadas
+        
+        @requested_status int             // Estado solicitado (cancelación o pausa)
+        @requested_status_tm    datetime    //fecha y hora de la solicitud de cancelación o pausa
 
         @"params" memo                  // Objeto JSON con los parámetros de entrada para el trabajo
         @"result" memo                  // Objeto JSON con el resultado del trabajo
