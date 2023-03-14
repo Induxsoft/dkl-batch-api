@@ -1,0 +1,2 @@
+POST,GET: /jobs/{job_token?}/ > /batch/index.dkl
+POST: /jobs/{job_token}/request/{action} > /batch/index.dkl

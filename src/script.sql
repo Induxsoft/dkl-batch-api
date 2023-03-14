@@ -1,0 +1,55 @@
+CREATE TABLE `jobsgroup`(
+	`sys_pk` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+	`sys_guid` VARCHAR(32) NOT NULL UNIQUE,
+	`sys_dtcreated` DATETIME NOT NULL,
+	`sys_timestamp` DATETIME NOT NULL,
+	`sys_recver` INT,
+	`sys_deleted` BOOL,
+	`sys_lock` INT,
+	`sys_info` VARCHAR(32),
+	`sys_user` VARCHAR(32),
+	`name` VARCHAR(150) NOT NULL UNIQUE,
+	`apikey` VARCHAR(32) NOT NULL);
+CREATE TABLE `job`(
+	`sys_pk` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+	`sys_guid` VARCHAR(32) NOT NULL UNIQUE,
+	`sys_dtcreated` DATETIME NOT NULL,
+	`sys_timestamp` DATETIME NOT NULL,
+	`sys_recver` INT,
+	`sys_deleted` BOOL,
+	`sys_lock` INT,
+	`sys_info` VARCHAR(32),
+	`sys_user` VARCHAR(32),
+	`jp_ref` INT NOT NULL,
+	`start` DATETIME,
+	`end` DATETIME,
+	`program` VARCHAR(32) NOT NULL,
+	`timeout` INT,
+	`jstatus` INT NOT NULL,
+	`progress_type` INT NOT NULL,
+	`percentage` DECIMAL(4,1),
+	`steps` INT,
+	`steps_completed` INT,
+	`requested_status` INT,
+	`requested_status_tm` DATETIME,
+	`params` TEXT,
+	`result` TEXT);
+CREATE TABLE `joblog`(
+	`sys_pk` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+	`sys_guid` VARCHAR(32) NOT NULL UNIQUE,
+	`sys_dtcreated` DATETIME NOT NULL,
+	`sys_timestamp` DATETIME NOT NULL,
+	`sys_recver` INT,
+	`sys_deleted` BOOL,
+	`sys_lock` INT,
+	`sys_info` VARCHAR(32),
+	`sys_user` VARCHAR(32),
+	`job_ref` INT NOT NULL,
+	`note` TEXT NOT NULL,
+	`new_percentage` DECIMAL(4,1),
+	`new_steps_completed` INT,
+	`sender` VARCHAR(32));
+CREATE INDEX `jobuseridx` ON `job` (`sys_user`);
+CREATE INDEX `jobnameidx` ON `job` (`program`);
+ALTER TABLE `job` ADD FOREIGN KEY (`jp_ref`) REFERENCES `jobsgroup`(`sys_pk`);
+ALTER TABLE `joblog` ADD FOREIGN KEY (`job_ref`) REFERENCES `job`(`sys_pk`);

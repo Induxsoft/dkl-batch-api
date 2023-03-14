@@ -1,0 +1,34 @@
+// Lanzador de programas batch
+#include "dkli.dkh"
+#!
+program
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "batch.config.dkl"
+    #include "batch.local.dkh"
+
+    // Argumentos de línea de comando: token=Identificador del trabajo (previamente registrado por el endpoint del servicio)
+    ref args=commandline("=")
+
+    ref context=batch.loadContextByToken(@@(args,"token"))
+    ref db=dbr.open(@batch_db)
+    
+    
+    program=path.concat(@batch_base_path, @@(context,"job/group_id"))
+    program=path.concat(program, @@(context,"job/program"))
+
+    if not (file.exists(program)) { return }
+
+    do batch.start(context)
+    
+    do runscript(program,"batch_context", context)
+
+    do batch.finishedSuccess(db,context)
+
+    exception
+    {
+        do batch.finishedWithErrors(db,last_error(),context)
+    }
+
+}

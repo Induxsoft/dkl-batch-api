@@ -1,0 +1,129 @@
+// Funciones para gestionar la información de trabajos en proceso en la base de datos conectada
+#include "dkli.dkh"
+#!
+module
+{
+    batch.loadContextByToken::&db,token
+    {
+        new p{@"token":token}
+
+        ref dataBytoken=dbr.rec(db,@get_dataByToken,p)
+        new credentials
+        {
+            @"group":@@(dataBytoken,"group")
+            @"apikey":@@(dataBytoken,"apikey")
+        }
+        do field.remove(dataBytoken,"apikey")
+
+        new batch_context
+        {
+            @"credentials*":credentials //{ "group":"grupo de trabajos", "apikey":"clave de api" }
+            @"params": @null //Objeto de parámetros de entrada
+            @"job*": dataBytoken
+            @"result": @null // Aquí deberá asignarse el resultado del trabajo
+        }
+
+           
+        return batch_context
+        // Regresar un objeto batch_context
+    }
+
+    batch.create::&db,&data
+    {
+        ref now=now()
+        new job
+        {
+            @"sys_guid":cut(uuid(),31)
+            @"sys_dtcreated*":now
+            @"sys_timestamp*":now
+            @"jp_ref":@@(data,"jp_ref")
+            @"start*":now
+            @"program":@@(data,"program")
+            @"sys_user":@@(data,"owner")
+            @"jstatus":@@(data,"#jstatus")
+            @"progress_type":@@(data,"#progress_type")
+        }
+
+        timeout=@@(data,"timeout")
+        progress_type=@@(data,"progress_type")
+        steps=@@(data,"steps")
+        ref params=@@(data,"&params")
+
+        if timeout!=""{job<"timeout">:timeout}
+        // if progress_type!=""{job<"progress_type">:progress_type}
+        if parse.num(progress_type)==2 && steps==""{do rise_error(99,"Es necesario definir el campo steps.")}
+        if steps!=""{job<"steps">:steps}
+
+        if not(isnull(params)){job<"params">:to.json(params)}
+
+        do dbr.insert(db,"job",job)
+
+        return job
+        //Crea el registro de un trabajo en estado "Solicitado"
+    }
+
+    #!
+    batch.filter_jobs::&db,&params
+    {
+        // new filter{@"textFilter":textFilter}
+        
+        return dbr.list(db,@get_dataFilter,params)
+    }
+    #!
+    batch.update::&db,&data
+    {
+        new job
+        {
+            @"jstatus":@@(data,"#new_status")   
+            @"percentage":@@(data,"#progress")
+        }
+        
+         do dbr.update(db,"job",job,"sys_guid='@sys_pk' or sys_pk=@sys_pk",data)
+        // do dbr.execute(db,@update_job,data)
+    }
+    batch.start::&context
+    {
+        // Registra la puesta en proceso de un trabajo
+    }
+
+    batch.finishedSuccess::&db,&context
+    {
+        ref now=now()
+        new joblog
+        {
+            @"sys_guid":cut(uuid(),31)
+            @"sys_dtcreated*":now
+            @"sys_timestamp*":now
+            @"job_ref":@@(context,"sys_pk")
+            @"note":@@(context,"note")
+            @"new_percentage":@@(context,"#porcentage")
+            @"new_steps_completed":@@(context,"#steps")
+            @"sender":@@(context,"sender")
+        }
+        do dbr.insert(db,"joblog",joblog)
+        exception{}
+        // Registra la terminación exitosa de un trabajo
+    }
+
+    batch.finishedWithErrors::&db,error,&context
+    {
+
+        ref now=now()
+        new joblog
+        {
+            @"sys_guid":cut(uuid(),31)
+            @"sys_dtcreated*":now
+            @"sys_timestamp*":now
+            @"job_ref":@@(context,"sys_pk")
+            @"note":error
+            @"new_percentage":@@(context,"#porcentage")
+            @"new_steps_completed":@@(context,"#steps")
+            @"sender":@@(context,"sender")
+        }
+        exception{}
+        do dbr.insert(db,"joblog",joblog)
+
+        // Registra la terminación anómala de un trabajo
+    }
+}
+

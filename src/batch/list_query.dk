@@ -1,0 +1,30 @@
+#include "dkli.dkh"
+#!
+module "lista de consultas"
+{
+
+	//consultas
+	@keyfield="sys_pk"
+	@fields_system="@uuid,now(),now(),0,0,0,'',''"
+	
+	@get.jp_ref="SELECT jg.sys_pk FROM jobsgroup jg WHERE jg.sys_guid=@idjg OR jg.name=@idjg LIMIT 1"
+	@get_new_job="SELECT j.sys_pk,j.sys_guid AS token,j.sys_dtcreated AS created,jg.sys_guid AS 'group',j.program,j.timeout,j.progress_type,j.steps,j.sys_user AS owner
+				from job j INNER JOIN jobsgroup jg ON j.jp_ref=jg.sys_pk where j.#<@keyfield>=@idjg"
+	@get_dataUpdate="SELECT j.sys_pk,j.jstatus AS 'status',j.percentage AS 'progress',j.progress_type FROM job j WHERE j.#<@keyfield>=@idjg"
+	@get_id_job="SELECT sys_pk from job where sys_guid=@job_token or sys_pk=@job_token"
+
+	@update_job="update job set jstatus=@new_status,percentage=@progress where sys_guid='@sys_pk' or sys_pk=@sys_pk"
+
+	@get_dataByToken="SELECT jg.sys_guid group_id,jg.name group_name,j.program,j.sys_guid token,j.sys_dtcreated created, 
+			jg.name AS 'group',j.timeout,j.progress_type,j.steps,j.sys_user 'owner',j.`start` start_date,j.`end` end_date,j.jstatus 'status' ,jg.apikey 
+ 			FROM jobsgroup jg 
+			INNER JOIN job j ON j.jp_ref=jg.sys_pk WHERE j.sys_pk=@token OR j.sys_guid=@token limit 1"
+
+	@get_dataFilter="SELECT j.sys_dtcreated created,j.sys_timestamp updated,j.`start`,j.`end`,j.program,j.timeout,j.percentage progress,
+					j.progress_type,j.steps,j.jstatus 'status',
+					IFNULL((SELECT jl.note FROM joblog jl WHERE jl.job_ref=j.sys_pk ORDER BY sys_pk DESC LIMIT 1),'')note,
+					IFNULL((SELECT jl.sender FROM joblog jl WHERE jl.job_ref=j.sys_pk ORDER BY sys_pk DESC LIMIT 1),'')sender,
+					j.requested_status,j.requested_status_tm  FROM job j 
+					WHERE j.sys_user like '%{@owner}%' or j.start like '%{@start_date}%' or j.end '%{@end_date}%' 
+					or j.jstatus '%{@status}%' or j.program '%{@program}%' limi {@limit}"
+}
