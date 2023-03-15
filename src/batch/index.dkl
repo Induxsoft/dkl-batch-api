@@ -5,6 +5,7 @@ module "index"
 	#include "functions.dkh"
 	#include "dbr.dkh"
 	#include "serialize.dkh"
+	
 	@SITE_INCLUDES="batch.config.dkl,batch.lib.dk"
 	#include "website.dkl"
 

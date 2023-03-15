@@ -65,10 +65,11 @@ module
     #!
     batch.filter_jobs::&db,&params
     {
-        // new filter{@"textFilter":textFilter}
-        
+        ref filter=record.copy(params,"owner,star")
+        do rise_error(00,to.json(params))
         return dbr.list(db,@get_dataFilter,params)
     }
+    
     #!
     batch.update::&db,&data
     {
@@ -124,6 +125,24 @@ module
         do dbr.insert(db,"joblog",joblog)
 
         // Registra la terminación anómala de un trabajo
+    }
+
+    #!
+    batch.assign_status::&db,action,idjg
+    {
+        st=0
+        switch action
+        {
+            case "cancel"{st=99}
+            case "pause"{st=2}
+            case "play"{st=1}
+        }
+        new status{
+            @"new_status":st
+            @"sys_pk":idjg
+        }
+        do dbr.execute(db,@update_status_job,status)
+        return dbr.rec(db,@get_time_stamp_job,status)
     }
 }
 

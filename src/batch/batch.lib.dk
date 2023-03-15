@@ -37,26 +37,35 @@ module "batch.lib"
 		postData<"jp_ref">:jp_ref
 
 		new p{@"job_token":@@(params,"job_token")}
+
 		switch action
 		{
 			case "cprt"
 			{
-
+				ref data= batch.assign_status(db,@@(params,"action"),@@(p,"job_token"))
 			}
 			case "upep"
 			{
 				ref dataCopy=record.copy(postData,"note,new_status,progress,sender,result")
 				dataCopy<"sys_pk">:dbr.num(db,@get_id_job,p)
+
 				do batch.update(db,dataCopy)
 				ref data=get_update_job(db,@@(dataCopy,"sys_pk"))
 			}
 			case "create"
 			{
 				ref newjob=batch.create(db,postData)
+				
 				@keyfield="sys_guid"
 				ref data=get.new_job(db,@@(newjob,"sys_guid"))
 			}
 		}
+
+		if isnull(data){
+			ref data=record.create()
+			data<"jp_ref">:@@(postData,"jp_ref")
+		}
+
 		do batch.finishedSuccess(db,data)
 
 		if field.exist(data,"sys_pk"){do field.remove(data,"sys_pk")}
@@ -76,10 +85,9 @@ module "batch.lib"
 	#!
 	action_get::&db,&params
 	{
-		if @@(params,"$limit")==""{params<"limit">:100}
+		// if @@(params,"$limit")==""{params<"limit">:100}
 
-		// ref newp=record.copy(pa)
-		return batch.filter_jobs(db,params)
+		// return batch.filter_jobs(db,params)
 	}
 
 	#!
