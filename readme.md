@@ -3,7 +3,7 @@
 [Vea la documentación en docs.induxsoft.net](https://docs.induxsoft.net/es/api/apps/batch/)
 
 
-## Instalación 
+### Instalación 
 
 ## Requisitos previos
 * Tener instalado un servidor web(nginx)
@@ -13,7 +13,7 @@
 * Necesita de [DDM](https://github.com/Induxsoft/dkl-ddm) en la carpeta de binarios de Devkron 
 * Se necesita el archivo batch-api.ddm que se encuentra en este repositorio (src/install)
 * Ejecutar en line de comando el archivo batch-api.ddm como lo muestra en repositorio de DDM
-* Ejecutar el script sql que nos proporcionó DDM, en el gestor de base de datos (MYSQL)
+* Ejecutar el script SQL que nos proporcionó DDM, en el gestor de base de datos (MYSQL)
 
 
 # Configuración
@@ -26,7 +26,8 @@
 - Colocar una carpeta dentro de la carpeta batch que se encuentra dentro de la carpeta de binarios de Devkron, con el nombre del campo sys_guid 
 	de la tabla jobsgroup de la base de datos antes creada.
 - Crear un programa que realice cierto trabajo en la carpeta antes creada
-- Invocar el servicio API BATCH con el proceso de crear un trabjo como lo muestra la documentación de la api
+- Invocar el servicio API BATCH con el proceso de crear un trabajo como lo muestra la documentación de la API
+
 
 ## Nota
 Es responsabilidad del proceso por lotes de actualizar el estado del trabajo, así como también notificar a cierto tiempo el estado que se encuentra un trabajo y de mandar un mensaje de finalización cuando  culmine dicho trabajo.
