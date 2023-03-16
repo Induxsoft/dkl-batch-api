@@ -364,7 +364,8 @@ module
             case "pause"{st=2}
             case "play"{st=1}
         }
-        new status{
+        new status
+        {
             @"new_status":st
             @"sys_pk":idjg
         }

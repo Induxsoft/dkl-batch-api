@@ -23,7 +23,7 @@ module "lista de consultas"
  			FROM jobsgroup jg 
 			INNER JOIN job j ON j.jp_ref=jg.sys_pk WHERE j.sys_pk=@token OR j.sys_guid=@token limit 1"
 			
-	@get_time_stamp_job="SELECT sys_timestamp from job where sys_guid='@sys_pk' or sys_pk=@sys_pk"
+	@get_time_stamp_job="SELECT sys_timestamp as time_stamp from job where sys_guid=@sys_pk or sys_pk=@sys_pk"
 
 	@get_dataFilter="SELECT j.sys_dtcreated created,j.sys_timestamp updated,j.`start`,j.`end`,j.program,j.timeout,j.percentage progress,
 					j.progress_type,j.steps,j.jstatus 'status',

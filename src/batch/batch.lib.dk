@@ -43,6 +43,7 @@ module "batch.lib"
 			case "cprt"
 			{
 				ref data= batch.assign_status(db,@@(params,"action"),@@(p,"job_token"))
+				// do rise_error(00,to.json(data))
 			}
 			case "upep"
 			{
@@ -74,6 +75,10 @@ module "batch.lib"
 		{
 
 			if not(isset("data")){ref data=record.create()}
+			if isnull(data){
+				ref data=record.create()
+				data<"jp_ref">:@@(postData,"jp_ref")
+			}
 
 			data<"jp_ref">:@@(postData,"jp_ref")
 			data<"steps">:0
@@ -89,6 +94,8 @@ module "batch.lib"
 	#!
 	action_get::&db,&params
 	{
+		params<"jp_ref">:get.jp_ref(db,@@(params,"auth/idjg"))
+
 		if @@(params,"job_token")!=""
 		{
 			if @@(params,"log")=="log"{return batch.getStatusJobLog(db,params)}

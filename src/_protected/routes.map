@@ -1,2 +1,4 @@
-POST,GET: /jobs/{job_token?}/ > /batch/index.dkl
-POST: /jobs/{job_token}/request/{action} > /batch/index.dkl
+POST,GET: /jobs/{job_token?}/ > $batch/batch.endpoint.dkl
+GET: /jobs/{application}/{database}/{token_sesión}/ > $batch/batch.endpoint.dkl
+GET: /jobs/{job_token}/{log}/ > $batch/batch.endpoint.dkl
+POST: /jobs/{job_token}/request/{action} > $batch/batch.endpoint.dkl
