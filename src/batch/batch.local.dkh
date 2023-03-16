@@ -132,10 +132,14 @@ module
     #!
     batch.update::&db,&data
     {
+
         new p{
             @"sys_pk":@@(data,"sys_pk")
             @"token":@@(data,"token")
         }
+        
+        do validate.status(if(@@(p,"$sys_pk")=="",@@(p,"$token"),@@(p,"$sys_pk")),@@(data,"#new_status"))
+
         new job
         {
             @"jstatus":@@(data,"#new_status")   
@@ -150,14 +154,25 @@ module
         
         ref dataJob=get_update_job(db,@@(p,"sys_pk"))
 
-        token=""
-        if @@(p,"sys_pk")!=""{token=@@(p,"sys_pk")}
-        else{token=@@(p,"token")}
+        token=if(@@(p,"$sys_pk")=="",@@(p,"$token"),@@(p,"$sys_pk"))
+        
 
         do batch.saveLog(token,"Actualización terminada")
 
         return dataJob
         
+    }
+
+    #!
+    validate.status::token,newstatus
+    {
+        new params{@"job_token":token}
+        ref dataj=batch.getStatusJob(batch.openDB(),params)
+
+        if newstatus==2 && (@@(dataj,"#status")==3 || @@(dataj,"#status")==99){do rise_error(99,"El trabajo ya se encuentra terminado o cancelado.")}
+        else if newstatus==@@(dataj,"#status"){do rise_error(99,"El trabajo ya se encuentra con el estado que desea asignar.")}
+        else if newstatus==99 && @@(dataj,"#status")==3{do rise_error(99,"No puede cancelarse un trabajo que ya ha terminado.")}
+
     }
 
     #!
@@ -168,6 +183,7 @@ module
         do dbr.execute(db,"update job set requested_status=null,requested_status_tm=now() where sys_guid=@token",params)
     }
     #!
+
     get_update_job::&db,idjg
     {
         new p{@"idjg":idjg}
@@ -276,7 +292,7 @@ module
         {
             do sleep(freq*1000)
 
-            sr=status_requested(token)
+            sr=batch.status_requested(token)
             if sr==1 || sr==99{return sr}
 
             s=s+freq

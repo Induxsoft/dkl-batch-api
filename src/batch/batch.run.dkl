@@ -23,14 +23,19 @@ program
         "credentials": { "group":"grupo de trabajos", "apikey":"clave de api" },
         "params": Objeto de parámetros de entrada,
         "job": {
-            "id":"Token del trabajo",
             "group_id":"sys_guid del grupo de trabajos",
             "group_name": "Nombre del grupo de trabajos",
+            "program": "Nombre del programa a ejecutar",
+            "token": "Token del trabajo",
+            "created":"Marca de tiempo del servidor",
+            "group":"Id o nombre del grupo de trabajos",
+            "program": "Nombre del trabajo",
+            "timeout": (tiempo de vigencia del trabajo),
+            "progress_type": (la manera como se reporta el progreso),
+            "steps": (Cantidad de iteraciones si progress_type=2),
             "owner":"Id de usuario propietario del trabajo",
             "start_date": "Fecha y hora de inicio del trabajo",
             "end_date": "Fecha y hora del final del rango de tiempo si el trabajo ya terminó",
-            "status" : Estado del trabajo,
-            "params": Objeto de parámetros de entrada,        
             "status" : Estado del trabajo
         },
         "result": null // Aquí deberá asignarse el resultado del trabajo
@@ -52,7 +57,7 @@ program
 
     exception
     {
-        // do batch.finishedWithErrors(db,last_error(),context)
+         do batch.finishedWithErrors(db,last_error(),context)
         do rise_error(00,last_error())
     }
 

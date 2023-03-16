@@ -30,7 +30,7 @@ module "index"
 		if isnull(params){ref params=record.create()}
 		if isnull(postData){ref postData=record.create()}
 
-		ref p=parse.authorization(auth)
+		// ref p=parse.authorization(auth)
 
 		params<"auth*">:record.copy(parse.authorization(auth),"*")
 

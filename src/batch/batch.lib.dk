@@ -42,8 +42,7 @@ module "batch.lib"
 		{
 			case "cprt"
 			{
-				ref data= batch.assign_status(db,@@(params,"action"),@@(p,"job_token"))
-				// do rise_error(00,to.json(data))
+				ref data=batch.assign_status(db,@@(params,"action"),@@(p,"job_token"))
 			}
 			case "upep"
 			{
@@ -62,10 +61,10 @@ module "batch.lib"
 			}
 		}
 
-		if isnull(data){
-			ref data=record.create()
-			data<"jp_ref">:@@(postData,"jp_ref")
-		}
+		// if isnull(data){
+		// 	ref data=record.create()
+		// 	data<"jp_ref">:@@(postData,"jp_ref")
+		// }
 
 		
 		if field.exist(data,"sys_pk"){do field.remove(data,"sys_pk")}
@@ -75,10 +74,7 @@ module "batch.lib"
 		{
 
 			if not(isset("data")){ref data=record.create()}
-			if isnull(data){
-				ref data=record.create()
-				data<"jp_ref">:@@(postData,"jp_ref")
-			}
+			if isnull(data){ref data=record.create()}
 
 			data<"jp_ref">:@@(postData,"jp_ref")
 			data<"steps">:0

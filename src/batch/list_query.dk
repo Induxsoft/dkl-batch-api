@@ -40,7 +40,7 @@ module "lista de consultas"
 					IFNULL((SELECT jl.note FROM joblog jl WHERE jl.job_ref=j.sys_pk ORDER BY sys_pk DESC LIMIT 1),'')note,
 					IFNULL((SELECT jl.sender FROM joblog jl WHERE jl.job_ref=j.sys_pk ORDER BY sys_pk DESC LIMIT 1),'')sender,
 					j.requested_status,j.requested_status_tm  FROM job j 
-					WHERE j.sys_pk=sys_pk or j.sys_guid=@sys_pk"
+					WHERE j.sys_pk=@sys_pk or j.sys_guid=@sys_pk"
 
 	@get_dataJobLog="SELECT j.note,j.new_percentage progress,j.sender,jb.jstatus 'status',jb.progress_type FROM joblog j INNER JOIN job jb ON j.job_ref=jb.sys_pk
 					WHERE jb.sys_pk=@sys_pk OR jb.sys_guid=@sys_pk"
