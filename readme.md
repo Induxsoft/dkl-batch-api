@@ -17,7 +17,7 @@
 
 # Configuración
 * En el archivo batch.config.dkl en la variable @batch_db especificar el nombre cualificado de una conexión de base de datos
-* Coloque la carpeta batch de este repositorio hacia carpeta de binarios de Devkron
+* Coloque la carpeta batch de este repositorio hacia la carpeta de binarios de Devkron
 * Coloque la carpeta _protected en su host a utilizar (binarios_devkron/web/Host)
 
 
