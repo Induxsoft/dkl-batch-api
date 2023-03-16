@@ -3,8 +3,7 @@
 [Vea la documentación en docs.induxsoft.net](https://docs.induxsoft.net/es/api/apps/batch/)
 
 
-### Instalación 
-
+## Instalación 
 ## Requisitos previos
 * Tener instalado un servidor web(nginx)
 * Tener Descargado devkron
