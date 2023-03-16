@@ -12,7 +12,7 @@
 ## Crear base de datos de API BATCH
 * Necesita de [DDM](https://github.com/Induxsoft/dkl-ddm) en la carpeta de binarios de Devkron 
 * Se necesita el archivo batch-api.ddm que se encuentra en este repositorio (src/install)
-* Ejecutar en line de comando el archivo batch-api.ddm como lo muestra en repositorio de DDM
+* Ejecutar en line de comando el archivo batch-api.ddm como lo muestra en el repositorio de DDM
 * Ejecutar el script SQL que nos proporcionó DDM, en el gestor de base de datos (MYSQL)
 
 
