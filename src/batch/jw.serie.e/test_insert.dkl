@@ -1,0 +1,88 @@
+#include "dkli.dkh"
+#!
+program
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "dbr.dkh"
+	#include "batch.local.dkh"
+
+	
+
+	//@batch_context
+	ref db=dbr.open("test_batch@MaxiComercio.R5")
+
+
+	max=@@(@batch_context,"#params/cantidad")
+
+	// if pasos <10 {actualiza solo al final}
+	// if pasos>10 actualiza cada 5% de avance
+	
+
+	new p{@"token":@@(@batch_context,"job/id")}
+	cont=10
+
+	
+	report_at=5 //%
+	items_report=(max/100)*report_at
+	items_count=0
+	
+	progress=0
+	pause=@false
+	
+	msg_cancelacion="Cancelado por el usuario"
+
+	for i=0;i<max
+	{
+		
+		if items_count==items_report
+		{
+			items_count=0
+			progress=progress+report_at
+
+			
+			//reportar report_at%
+			ref status=batch.update_percent(@@(@batch_context,"job/id"),progress)
+
+			//hay solicitud de pausa?
+			if batch.pause_requested(status)
+			{
+				switch batch.pause_until(@@(@batch_context,"job/id"),2,30)
+				{
+					case 0{ 
+					status<"requested_status">:99 
+					msg_cancelacion="Cancelado por tiempo de espera en pausa agotado"
+					}//Se venció el tiempo de espera 
+					case 1{status<"requested_status">:1}//reanudar
+					case 99{status<"requested_status">:99}//cancelar
+				}
+			}
+
+			if batch.continue_requested(status){ }
+
+			if batch.cancel_requested(status,msg_cancelacion)
+			{
+				break
+			}
+		}
+
+		new t
+		{
+			@"texto":@@(@batch_context,"job/id")
+			@"dato":i
+		}
+
+		do dbr.insert(db,"test",t)
+		
+		items_count=items_count+1
+		exception
+		{
+			do batch.log(token, last_error())
+		}
+	}
+	
+
+	do print("succcess insert")
+
+
+}

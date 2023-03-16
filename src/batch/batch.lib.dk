@@ -46,11 +46,11 @@ module "batch.lib"
 			}
 			case "upep"
 			{
-				ref dataCopy=record.copy(postData,"note,new_status,progress,sender,result")
+				ref dataCopy=record.copy(postData,"note,new_status,progress,sender,result,progress_type")
 				dataCopy<"sys_pk">:dbr.num(db,@get_id_job,p)
 
-				do batch.update(db,dataCopy)
-				ref data=get_update_job(db,@@(dataCopy,"sys_pk"))
+				ref data= batch.update(db,dataCopy)
+				
 			}
 			case "create"
 			{
@@ -66,16 +66,20 @@ module "batch.lib"
 			data<"jp_ref">:@@(postData,"jp_ref")
 		}
 
-		do batch.finishedSuccess(db,data)
-
+		
 		if field.exist(data,"sys_pk"){do field.remove(data,"sys_pk")}
 		return data
 
 		exception
 		{
+
+			if not(isset("data")){ref data=record.create()}
+
+			data<"jp_ref">:@@(postData,"jp_ref")
 			data<"steps">:0
 			data<"porcentage">:0
-			do batch.finishedWithErrors(db,last_error(),data)
+
+			if field.exist(data,"sys_pk"){do batch.saveLog(@@(params,"job_token"),last_error())}
 			
 			do rise_error(99,last_error())
 		}
@@ -85,17 +89,20 @@ module "batch.lib"
 	#!
 	action_get::&db,&params
 	{
-		// if @@(params,"$limit")==""{params<"limit">:100}
+		if @@(params,"job_token")!=""
+		{
+			if @@(params,"log")=="log"{return batch.getStatusJobLog(db,params)}
+			return batch.getStatusJob(db,params)
+		}
+		else if @@(params,"token_sesión")!=""
+		{
+			return batch.getStatusJobByUser(db,params)
+		}
 
-		// return batch.filter_jobs(db,params)
+		return batch.filter_jobs(db,params)
 	}
 
-	#!
-	get_update_job::&db,idjg
-	{
-		new p{@"idjg":idjg}
-		return dbr.rec(db,ftext(@get_dataUpdate),p)
-	}
+	
 	#!
 	get.new_job::&db,idjg
 	{

@@ -14,12 +14,15 @@ module "lista de consultas"
 	@get_id_job="SELECT sys_pk from job where sys_guid=@job_token or sys_pk=@job_token"
 
 	@update_job="update job set jstatus=@new_status,percentage=@progress where sys_guid='@sys_pk' or sys_pk=@sys_pk"
-	@update_status_job="update job set jstatus=@new_status,sys_timestamp=now() where sys_guid='@sys_pk' or sys_pk=@sys_pk"
+
+	@update_status_job="update job set requested_status=@new_status,requested_status_tm=now() where sys_guid='@sys_pk' or sys_pk=@sys_pk"
+	@updateStatusByTokenOrPk="update job set jstatus=@new_status where sys_guid=@token or sys_pk=@sys_pk"
 
 	@get_dataByToken="SELECT jg.sys_guid group_id,jg.name group_name,j.program,j.sys_guid token,j.sys_dtcreated created, 
-			jg.name AS 'group',j.timeout,j.progress_type,j.steps,j.sys_user 'owner',j.`start` start_date,j.`end` end_date,j.jstatus 'status' ,jg.apikey 
+			jg.name AS 'group',j.timeout,j.progress_type,j.steps,j.sys_user 'owner',j.`start` start_date,j.`end` end_date,j.jstatus 'status' ,jg.apikey ,j.params,j.result
  			FROM jobsgroup jg 
 			INNER JOIN job j ON j.jp_ref=jg.sys_pk WHERE j.sys_pk=@token OR j.sys_guid=@token limit 1"
+			
 	@get_time_stamp_job="SELECT sys_timestamp from job where sys_guid='@sys_pk' or sys_pk=@sys_pk"
 
 	@get_dataFilter="SELECT j.sys_dtcreated created,j.sys_timestamp updated,j.`start`,j.`end`,j.program,j.timeout,j.percentage progress,
@@ -27,6 +30,30 @@ module "lista de consultas"
 					IFNULL((SELECT jl.note FROM joblog jl WHERE jl.job_ref=j.sys_pk ORDER BY sys_pk DESC LIMIT 1),'')note,
 					IFNULL((SELECT jl.sender FROM joblog jl WHERE jl.job_ref=j.sys_pk ORDER BY sys_pk DESC LIMIT 1),'')sender,
 					j.requested_status,j.requested_status_tm  FROM job j 
-					WHERE j.sys_user like '%{@owner}%' or j.start like '%{@start_date}%' or j.end '%{@end_date}%' 
-					or j.jstatus '%{@status}%' or j.program '%{@program}%' limi {@limit}"
+					WHERE j.sys_user like '%@{owner}%' or j.start like '%@{start_date}%' or j.`end` LIKE '%@{end_date}%' or j.jstatus like '%@{status}%'
+					or j.program LIKE '%@{program}%'  "
+					
+
+
+	@get_dataJobStatus="SELECT j.sys_dtcreated created,j.sys_timestamp updated,j.`start`,j.`end`,j.program,j.timeout,j.percentage progress,
+					j.progress_type,j.steps,j.jstatus 'status',
+					IFNULL((SELECT jl.note FROM joblog jl WHERE jl.job_ref=j.sys_pk ORDER BY sys_pk DESC LIMIT 1),'')note,
+					IFNULL((SELECT jl.sender FROM joblog jl WHERE jl.job_ref=j.sys_pk ORDER BY sys_pk DESC LIMIT 1),'')sender,
+					j.requested_status,j.requested_status_tm  FROM job j 
+					WHERE j.sys_pk=sys_pk or j.sys_guid=@sys_pk"
+
+	@get_dataJobLog="SELECT j.note,j.new_percentage progress,j.sender,jb.jstatus 'status',jb.progress_type FROM joblog j INNER JOIN job jb ON j.job_ref=jb.sys_pk
+					WHERE jb.sys_pk=@sys_pk OR jb.sys_guid=@sys_pk"
+
+	@get_dataJobByUser="SELECT j.sys_dtcreated created,j.sys_timestamp updated,j.`start`,j.`end`,j.program,j.timeout,j.percentage progress,
+					j.progress_type,j.steps,j.jstatus 'status',
+					IFNULL((SELECT jl.note FROM joblog jl WHERE jl.job_ref=j.sys_pk ORDER BY sys_pk DESC LIMIT 1),'')note,
+					IFNULL((SELECT jl.sender FROM joblog jl WHERE jl.job_ref=j.sys_pk ORDER BY sys_pk DESC LIMIT 1),'')sender,
+					j.requested_status,j.requested_status_tm  FROM job j 
+					WHERE j.sys_user=@uid"
+
+	@get_dataUser="SELECT t.sys_guid FROM tuser t INNER JOIN sys_session s ON t.sys_pk=s.iuser WHERE s.sys_guid=@token AND IFNULL(s.sys_deleted,0)=0;"
+
+	@updateStatusJobFinishSuccess="update job set jstatus=3,steps=if(progress_type=1,100,@max) where sys_guid=@job_token or sys_pk=@sys_pk "
+	@updateStatusJobFinishWithErrors="update job set jstatus=if(jstatus=99,99,4) where sys_guid=@token or sys_pk=@sys_pk "
 }
