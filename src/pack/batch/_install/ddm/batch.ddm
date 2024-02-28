@@ -57,4 +57,36 @@ model "batch-api"
         @"new_steps_completed" int
         @"sender" string (32) // Identificador del remitente del registro
     }
+    //programador de tareas
+    entity "crontask":"TableModel"
+    {
+        @"id" string(32) unique required
+        @"tag" string(32) // Etiqueta para filtrado
+        @"jobsgroup" ref : "jobsgroup" required
+        @"program" string(32) required
+        @"params" memo
+        @"frequency" int // Frecuencia: 0-Una vez, 1-Diario, 2-Semanal, 3-Mensual
+        @"every" int // Cantidad de minutos tras los que se repite la tarea (repetir cada n minutos)
+        @"for" int //cantidad de minutos 0 - indifinidamente,15min,30min,60,720 (12 horas),1440 (día) (durante n minutos)
+        @"start" datetime // Fecha y hora a partir de la cual empieza a ejecutarse
+        @"last_cycle" datetime //La fecha y hora a partir d ela úúltima vez que se hizo una repeticion (frecuency), inicialmente es igual a start
+        @"finish" datetime // Fecha y hora hasta la que se continuará repitiendo, si es null, la tarea nunca dejará de repetirse
+        @"disabled" bool // Si es true, la tarea no se ejecutará
+    }
+
+
+    entity "crontask_log":"TableModel"
+    {
+        @"task" ref : "crontask" required
+        @"start" datetime required 
+        @"launched" bool 
+        @"log" mmemo // Salida devuelta por el lanzamiento o error
+        @"error" bool //true si se produjo un error en el lanzamiento
+        
+        index "crontask_log_idx1" unique
+        {
+            field "task"
+            field "start"
+        }
+    }
 }
