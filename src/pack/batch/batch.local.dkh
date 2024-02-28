@@ -1,7 +1,7 @@
 // Funciones para gestionar la información de trabajos en proceso en la base de datos conectada
 #include "dkli.dkh"
 #!
-module
+module "batch"
 {
     #include "list_query.dk"
     #include "batch.config.dkl"
@@ -279,8 +279,6 @@ module
     }
 
     #!
-
-
     batch.status_requested::token
     {
         new params{@"job_token":token}
@@ -427,4 +425,5 @@ module
     {
         return dbr.list(db,"select * from jobsgroup",@null)
     }
+}
 
