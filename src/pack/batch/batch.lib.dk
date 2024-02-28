@@ -1,0 +1,157 @@
+﻿#include "dkli.dkh"
+#!
+module "batch.lib"
+{
+	#include "list_query.dk"
+	#include "batch.local.dkh"
+
+	#!
+	api_base_service::
+    {
+        expose responseJSONdata
+
+        new responseJSONdata
+        {
+            @"success":@true
+        }
+        
+        that
+        
+        @http_context<"response/headers/Content-Type">:"application/json;charset=utf-8"
+        @http_context<"response/output">:"text"
+        @http_context<"response/text">: to.json(responseJSONdata)
+    }
+
+	#!
+	batchDb.open::
+	{
+		ref db=@@(@http_context,"&session/idp/database") 
+		if not(isnull(db)){return db}
+
+		return dbr.open(@batch_db)
+	}
+
+	#!
+	action_post::&db,&params,&postData
+	{
+		action=ifstr(@@(params,"action")!="","cprt",ifstr(@@(params,"job_token")!="","upep","create"))
+		jp_ref=get.jp_ref(db,@@(params,"auth/idjg"))
+		
+		postData<"jp_ref">:jp_ref
+
+		new p{@"job_token":@@(params,"job_token")}
+
+		switch action
+		{
+			case "cprt"
+			{
+				ref data=batch.assign_status(db,@@(params,"action"),@@(p,"job_token"))
+			}
+			case "upep"
+			{
+				ref dataCopy=record.copy(postData,"note,new_status,progress,sender,result,progress_type")
+				dataCopy<"sys_pk">:dbr.num(db,@get_id_job,p)
+
+				ref data= batch.update(db,dataCopy)
+				
+			}
+			case "create"
+			{
+				ref newjob=batch.create(db,postData)
+				
+				@keyfield="sys_guid"
+				ref data=get.new_job(db,@@(newjob,"sys_guid"))
+			}
+		}
+
+		// if isnull(data){
+		// 	ref data=record.create()
+		// 	data<"jp_ref">:@@(postData,"jp_ref")
+		// }
+
+		
+		if field.exist(data,"sys_pk"){do field.remove(data,"sys_pk")}
+		return data
+
+		exception
+		{
+
+			if not(isset("data")){ref data=record.create()}
+			if isnull(data){ref data=record.create()}
+
+			data<"jp_ref">:@@(postData,"jp_ref")
+			data<"steps">:0
+			data<"porcentage">:0
+
+			if field.exist(data,"sys_pk"){do batch.saveLog(@@(params,"job_token"),last_error())}
+			
+			do rise_error(99,last_error())
+		}
+		
+	}
+
+	#!
+	action_get::&db,&params
+	{
+		params<"jp_ref">:get.jp_ref(db,@@(params,"auth/idjg"))
+
+		if @@(params,"job_token")!=""
+		{
+			if @@(params,"log")=="log"{return batch.getStatusJobLog(db,params)}
+			return batch.getStatusJob(db,params)
+		}
+		else if @@(params,"token_sesion")!=""
+		{
+			return batch.getStatusJobByUser(db,params)
+		}
+
+		return batch.filter_jobs(db,params)
+	}
+
+	
+	#!
+	get.new_job::&db,idjg
+	{
+		new p{@"idjg":idjg}
+		return dbr.rec(db,ftext(@get_new_job),p)
+	}
+	#!
+	get.jp_ref::&db,idjg
+	{
+		new p{@"idjg":idjg}
+		return dbr.num(db,@get.jp_ref,p)
+	}
+
+	#!
+	parse.authorization::auth
+	{
+		if contains(tolower(auth),"basic"){ auth=trim(replace(auth,"Basic","")) }
+
+		if auth==""{do rise_error(99,"No se pudo procesar el encabezado con la autorización básica. base64(jobsgroup:clave_de_api).")}
+
+		if not(contains(auth,":")){auth=from.base64(trim(auth))}
+
+		ref dauth=split(auth,":")
+		
+		if @count(dauth)>1
+		{
+			new dataAuth
+			{
+				@"idjg":list.str(dauth,0)
+				@"apikey":list.str(dauth,1)
+			}
+			return dataAuth
+		}
+		do rise_error(99,"No se pudo procesar el encabezado con la autorización básica. base64(jobsgroup:clave_de_api).")
+	}
+
+	#!
+	default_action::&db,&params,&posData
+	{
+		return @null
+	}
+
+	point @post to action_post
+	point @get to action_get
+	point @custom to default_action
+}

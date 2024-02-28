@@ -1,0 +1,430 @@
+// Funciones para gestionar la información de trabajos en proceso en la base de datos conectada
+#include "dkli.dkh"
+#!
+module
+{
+    #include "list_query.dk"
+    #include "batch.config.dkl"
+
+    do _map_function(-1,"System.Threading.Thread","Sleep","sleep","System.Int32","void")
+    ref @batchDB=@null
+
+    batch.openDB::
+    {
+        if not(isnull(@batchDB)) { return @batchDB }
+
+        ref @batchDB=dbr.open(@batch_db)
+        return @batchDB
+    }
+
+    batch.loadContextByToken::&db,token
+    {
+        new p{@"token":token}
+
+        ref dataBytoken=dbr.rec(db,@get_dataByToken,p)
+
+        if isnull(dataBytoken){do rise_error(99,"No se encontró datos del token: "+token)}
+        new credentials
+        {
+            @"group":@@(dataBytoken,"group")
+            @"apikey":@@(dataBytoken,"apikey")
+        }
+        do field.remove(dataBytoken,"apikey")
+
+        ref params=@null
+        ref result=@null
+        if @@(dataBytoken,"$params")!=""{ref params=from.json(@@(dataBytoken,"params"))}
+        if @@(dataBytoken,"$result")!=""{ref result=from.json(@@(dataBytoken,"result"))}
+
+        dataBytoken<"id">:token
+        new batch_context
+        {
+            @"credentials*":credentials //{ "group":"grupo de trabajos", "apikey":"clave de api" }
+            @"params*":params  //Objeto de parámetros de entrada
+            @"job*": dataBytoken
+            @"result*": result // Aquí deberá asignarse el resultado del trabajo
+        }
+
+           
+        return batch_context
+        // Regresar un objeto batch_context
+    }
+
+    batch.create::&db,&data
+    {
+        ref now=now()
+        token=uuid()
+        new job
+        {
+            @"sys_guid":token
+            @"sys_dtcreated*":now
+            @"sys_timestamp*":now
+            @"jp_ref":@@(data,"jp_ref")
+            @"start*":now
+            @"program":@@(data,"program")
+            @"sys_user":@@(data,"owner")
+            @"jstatus":@@(data,"#jstatus")
+            @"progress_type":@@(data,"#progress_type")
+        }
+
+        timeout=@@(data,"$timeout")
+        progress_type=@@(data,"progress_type")
+        steps=@@(data,"steps")
+        ref params=@@(data,"&params")
+
+        if timeout!=""{job<"timeout">:timeout}
+        else{job<"timeout">:@batch_timeout}
+        // if progress_type!=""{job<"progress_type">:progress_type}
+        if parse.num(progress_type)==2 && steps==""{do rise_error(99,"Es necesario definir el campo steps.")}
+        if steps!=""{job<"steps">:steps}
+
+        if not(isnull(params)){job<"params">:to.json(params)}
+
+        do dbr.insert(db,"job",job)
+
+        do batch.saveLog(token,"Trabajo creada")        
+        do batch.start(batch.loadContextByToken(db,token))
+
+        return job
+        //Crea el registro de un trabajo en estado "Solicitado"
+    }
+
+    #!
+    batch.filter_jobs::&db,&params
+    {
+        if @@(params,"$limit")==""{params<"limit">:100}
+        ref filter=record.copy(params,"owner,start_date,end_date,status,program,limit")
+
+        return dbr.list(db,@get_dataFilter,filter)
+    }
+
+    #!
+    batch.getStatusJobLog::&db,&params
+    {
+        new p{@"sys_pk":@@(params,"job_token")}
+
+        ref dataj=dbr.rec(db,@get_dataJobStatus,p)
+        dataj<"log*">:dbr.list(db,@get_dataJobLog,p)
+
+        return dataj
+    }
+
+    #!
+    batch.getStatusJobByUser::&db,&params
+    {
+        qname=@@(params,"database")+"@"+@@(params,"application")
+
+        ref dbuser=dbr.reconnect(qname,@@(params,"token_sesion"))
+
+        new pms{@"token":@@(params,"token_sesion")}
+        uid=dbr.str(dbuser,@get_dataUser,pms)
+
+        new p{@"uid":uid}
+        return dbr.list(db,@get_dataJobByUser,p)
+    }
+    
+    #!
+    batch.getStatusJob::&db,&params
+    {
+        new p{@"sys_pk":@@(params,"job_token")}
+        return dbr.rec(db,@get_dataJobStatus,p)
+    }
+    #!
+    batch.update::&db,&data
+    {
+        new p
+        {
+            @"sys_pk":@@(data,"sys_pk")
+            @"token":@@(data,"token")
+        }
+        
+        do validate.status(if(@@(p,"$sys_pk")=="",@@(p,"$token"),@@(p,"$sys_pk")),@@(data,"#new_status"))
+
+        new job
+        {
+            @"jstatus":@@(data,"#new_status")   
+            @"percentage":@@(data,"#progress")
+            @"progress_type":@@(data,"#progress_type")
+        }
+        ref result=@@(data,"&result")
+
+        if not(isnull(result)){job<"result">:to.json(result)}
+
+        do dbr.update(db,"job",job,"sys_guid=@token or sys_pk=@sys_pk",p)
+        
+        ref dataJob=get_update_job(db,@@(p,"sys_pk"))
+
+        token=if(@@(p,"$sys_pk")=="",@@(p,"$token"),@@(p,"$sys_pk"))
+        
+        do batch.saveLog(token,"Actualización terminada")
+
+        return dataJob
+        
+    }
+
+    #!
+    validate.status::token,newstatus
+    {
+        new params{@"job_token":token}
+        ref dataj=batch.getStatusJob(batch.openDB(),params)
+
+        if newstatus==2 && (@@(dataj,"#status")==3 || @@(dataj,"#status")==99){do rise_error(99,"El trabajo ya se encuentra terminado o cancelado.")}
+        else if newstatus==@@(dataj,"#status"){do rise_error(99,"El trabajo ya se encuentra con el estado que desea asignar.")}
+        else if newstatus==99 && @@(dataj,"#status")==3{do rise_error(99,"No puede cancelarse un trabajo que ya ha terminado.")}
+    }
+
+    #!
+    batch.clear_requested_status::token
+    {
+        ref db=batch.openDB()
+        new params{@"token":token}
+        do dbr.execute(db,"update job set requested_status=null,requested_status_tm=now() where sys_guid=@token",params)
+    }
+
+    #!
+    get_update_job::&db,idjg
+    {
+        new p{@"idjg":idjg}
+        return dbr.rec(db,ftext(@get_dataUpdate),p)
+    }
+
+    batch.start::&context
+    {
+        program=path.concat(@batch_base_path, @@(context,"job/group_id"))
+        program=path.concat(program, @@(context,"job/program"))
+
+        if not(file.exists(program)) { return }
+        
+        do batch.updateStatus(@@(context,"job/group_id"),1)
+
+        ref db=batch.openDB()
+        qname=dbr.full_qname(db)
+        
+        res= exec("./dkl",'batch/batch.run.dkl "token='+@@(context,"job/id")+'" "db='+qname+'" ',@true)
+        
+        return res
+    }
+    #!
+    batch.updateStatus::token,status
+    {
+        new p
+        {
+            @"job_token":token
+            @"new_status":status
+        }
+        do dbr.execute(batch.openDB(),@updateStatusByTokenOrPk,p)
+    }
+    batch.saveLog::token,msg
+    {
+        ref now=now()
+        new p{@"job_token":token}
+        new joblog
+        {
+            @"sys_guid":cut(uuid(),31)
+            @"sys_dtcreated*":now
+            @"sys_timestamp*":now
+            @"job_ref":dbr.num(batch.openDB(),@get_id_job,p)
+            @"note":msg
+        }
+        do dbr.insert(batch.openDB(),"joblog",joblog)
+    }
+    batch.finishedSuccess::&db,&context
+    {
+        if isnull(db){ref db=batch.openDB()}
+
+        new p{
+           @"job_token":@@(context,"job/id")
+           @"max":@@(context,"#job/steps")
+        }
+
+        do dbr.execute(db,@updateStatusJobFinishSuccess,p)
+        ref now=now()
+        new joblog
+        {
+            @"sys_guid":cut(uuid(),31)
+            @"sys_dtcreated*":now
+            @"sys_timestamp*":now
+            @"job_ref":dbr.num(batch.openDB(),@get_id_job,p)
+            @"note":ifstr(@@(context,"note")!="",@@(context,"note"),"Trabajo terminada")
+            @"new_percentage":@@(context,"#porcentage")
+            @"new_steps_completed":@@(context,"#steps")
+            @"sender":@@(context,"sender")
+        }
+        do dbr.insert(db,"joblog",joblog)
+        // Registra la terminación exitosa de un trabajo
+    }
+
+    batch.finishedWithErrors::&db,error,&context
+    {
+        new p
+        {
+           @"job_token":@@(context,"job/id")
+        }
+        ref now=now()
+        new joblog
+        {
+            @"sys_guid":cut(uuid(),31)
+            @"sys_dtcreated*":now
+            @"sys_timestamp*":now
+            @"job_ref":dbr.num(batch.openDB(),@get_id_job,p)
+            @"note":error
+            @"new_percentage":@@(context,"#porcentage")
+            @"new_steps_completed":@@(context,"#steps")
+            @"sender":@@(context,"sender")
+        }
+        exception{}
+        do dbr.insert(db,"joblog",joblog)
+
+        // Registra la terminación anómala de un trabajo
+    }
+
+    #!
+
+
+    batch.status_requested::token
+    {
+        new params{@"job_token":token}
+        ref data=batch.getStatusJob(batch.openDB(),params)
+
+        return @@(data,"#requested_status")
+    }
+
+    batch.pause_until::token, freq, max
+    {
+        s=0
+        while @true
+        {
+            do sleep(freq*1000)
+
+            sr=batch.status_requested(token)
+            if sr==1 || sr==99{return sr}
+
+            s=s+freq
+            if s>=max { return 0 }
+        }
+    }
+
+    batch.update_percent::token, value
+    {
+        new data
+        {
+            @"new_status":1
+            @"progress":value
+            @"progress_type":2
+            @"token":token
+        }
+        return batch.update(batch.openDB(),data)
+    }
+
+    batch.pause_requested::&jobinfo
+    {
+        if @@(jobinfo,"#requested_status")==2
+        {
+            new data
+            {
+                @"token":@@(jobinfo,"job/id")
+                @"new_status":2
+            }
+
+            ref status=batch.update(batch.openDB(),data)
+
+            do batch.clear_requested_status(@@(@batch_context,"job/id"))
+            jobinfo<"requested_status">:0
+            return @true
+        }
+        return @false
+    }
+
+    batch.continue_requested::&jobinfo
+    {
+        if @@(jobinfo,"#requested_status")==1
+        {
+            new data
+            {
+                @"token":@@(jobinfo,"job/id")
+                @"new_status":1
+            }
+
+            ref status=batch.update(batch.openDB(),data)
+
+            do batch.clear_requested_status(@@(@batch_context,"job/id"))
+            jobinfo<"requested_status">:0
+            return @true
+        }
+        return @false
+    }
+    batch.cancel_requested::&jobinfo, msg
+    {
+        if @@(jobinfo,"#requested_status")==99
+        {
+            new data
+            {
+                @"token":@@(jobinfo,"job/id")
+                @"new_status":99
+                @"note":msg
+            }
+
+            ref status=batch.update(batch.openDB(),data)
+
+            do batch.clear_requested_status(@@(@batch_context,"job/id"))
+            jobinfo<"requested_status">:0
+            return @true
+        }
+        return @false
+    }
+
+
+    #!
+    batch.assign_status::&db,action,idjg
+    {
+        st=0
+        switch action
+        {
+            case "cancel"{st=99}
+            case "pause"{st=2}
+            case "play"{st=1}
+        }
+        new status
+        {
+            @"new_status":st
+            @"sys_pk":idjg
+        }
+        do dbr.execute(db,@update_status_job,status)
+
+        ref data=dbr.rec(db,@get_time_stamp_job,status)
+        do batch.saveLog(@@(status,"sys_pk"),"Trabajo creada")
+
+        return data
+    }
+    #!
+    batch.registerJobsGroup::&db,&data
+    {
+        using data{@"sys_timestamp*":now()}
+
+        ref jgroups=dbr.rec(db,"select * from jobsgroup where name=@name",data)
+        if isnull(jgroups)
+        {
+            using data
+            {
+                @"sys_guid":uuid()
+                @"sys_dtcreated*":now()
+            }
+            do dbr.insert(db,"jobsgroup",data)
+            ref jgroups=dbr.rec(db,"select * from jobsgroup where name=@name",data)
+        }
+        
+        return jgroups
+    }
+
+    #!
+    batch.removeJobsGroup::&db,namejg
+    {
+        new p{@"name":name}
+        do dbr.delete(db,"jobsgroup","name=@name or sys_guid=@name",p)
+    }
+    #!
+    batch.listJobsGroup::&db
+    {
+        return dbr.list(db,"select * from jobsgroup",@null)
+    }
+

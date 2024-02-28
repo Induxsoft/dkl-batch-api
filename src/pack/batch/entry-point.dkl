@@ -1,0 +1,26 @@
+#include "dkli.dkh"
+#!
+module "Controller configs"
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "dbr.dkh"
+	#include "crudl/crudl.dk"
+
+	if @@(@http_context,"$session/user/ids") == "" 
+    {
+        do rise_error(500,"Sesión inválido")
+	}
+
+    // POST,GE url="/!/batch/jobs/?jobs=&job_token="
+    // GET url="/!/batch/jobs/?application=&database=&token_sesion="
+    // GET url="/!/batch/jobs/?job_token=&log="
+    // POST url="/!/batch/jobs/?job_token=&action="
+
+    //auticacion por auth basic
+
+    @expected_html=contains(tolower(replace(@@(@http_context,"request/headers/HTTP_ACCEPT")," ","")),"text/html")
+    if @expected_html{do rise_error(500,"Interfaz no implementada")}
+
+	#include "batch.endpoint.dkl"
+}

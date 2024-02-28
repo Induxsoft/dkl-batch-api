@@ -1,0 +1,63 @@
+#include "dkli.dkh"
+#!
+module "index"
+{
+	#include "functions.dkh"
+	#include "dbr.dkh"
+	#include "serialize.dkh"
+	#include "batch.config.dkl"
+	#include "batch.lib.dk"
+
+
+	@http_context<"response/headers/Access-Control-Allow-Origin">:"*"
+	@http_context<"response/headers/Access-Control-Allow-Methods">:"*"//permite al servicio soportar todos los metodos http
+    @http_context<"response/headers/Access-Control-Allow-Headers">:"*"//"Content-Type, Authorization, X-Requested-With"
+
+    if @@(@http_context,"request/headers/REQUEST_METHOD")=="OPTIONS"{return}
+
+
+    go api_base_service(responseJSONdata:response)
+	{
+		ref db=batchDb.open()
+
+		method=@@(@http_context,"request/headers/REQUEST_METHOD")
+		auth=@@(@http_context,"$request/headers/http_Authorization")
+
+		ref params=@@(@http_context,"&request/get")
+		ref postData=@@(@http_context,"&request/post")
+
+		if isnull(postData){ref postData=from.json(field.dstr(@http_context,"request/post_string","{}"))}
+		if isnull(params){ref params=record.create()}
+		if isnull(postData){ref postData=record.create()}
+
+
+		params<"auth*">:record.copy(parse.authorization(auth),"*")
+
+		ref data=@null
+		switch method
+		{
+			case "POST"{that @post(db,params,postData)->*data}
+			case "GET"{that @get(db,params)->*data}
+			case "PATCH"{}
+			case "DELETE"{}
+			case "PUT"{}
+			default{that @custom(db,params,postData)->*data}
+		}
+
+		using response
+		{
+			@"data*":data
+		}
+		exception
+		{
+			using response
+			{
+				@"success":@false
+				@"message":last_error()
+			}
+		}
+	}
+	
+
+
+}

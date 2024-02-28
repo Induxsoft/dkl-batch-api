@@ -10,12 +10,23 @@ program
     #include "batch.config.dkl"
     #include "batch.local.dkh"
 
-    ref db=dbr.open(@batch_db)
     // Argumentos de línea de comando: token=Identificador del trabajo (previamente registrado por el endpoint del servicio)
     ref args=commandline("=")
 
+    qname=@batch_db
+    if trim(@@(args,"$db"))!=""{qname=@@(args,"$db")}
+
+    ref db=dbr.open(qname)
+
+    ref @batchDB=db
+
     ref context=batch.loadContextByToken(db,@@(args,"token"))
 
+    using context
+    {
+        @"qname":qname
+        @"database*":db
+    }
 
     /*
     @batch_context
@@ -42,14 +53,10 @@ program
         
     }*/
     
-    
-    
     program=path.concat(@batch_base_path, @@(context,"job/group_id"))
     program=path.concat(program, @@(context,"job/program"))
 
-    if not(file.exists(program)) { return }
-
-    // do batch.start(context)
+    if not (file.exists(program)) { return }
     
     do runscript(program,"batch_context", context)
 
@@ -57,8 +64,9 @@ program
 
     exception
     {
-         do batch.finishedWithErrors(db,last_error(),context)
-        do rise_error(00,last_error())
+        error=last_error()
+        do batch.finishedWithErrors(db,error,context)
+        do rise_error(00,error)
     }
 
 }
