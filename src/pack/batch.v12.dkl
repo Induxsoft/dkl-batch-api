@@ -3,11 +3,4 @@
 module ""
 {
     #include "batch/batch.local.dkh"
-
-    batch.createJobGroup::&db,&data
-    {
-        ref jgroups=dbr.rec(db,"select * from jobsgroup where name=@name",data)
-        if isnull(jgroups){do dbr.insert(db,"jobsgroup",data)}
-        else{do dbr.update(db,"jobsgroup",data,"name=@name",data)}
-    }
 }
