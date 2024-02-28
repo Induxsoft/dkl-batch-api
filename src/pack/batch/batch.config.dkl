@@ -7,5 +7,6 @@ module "config"
 	@batch_db="batch@MaxiComercio.R5" // Conexión a la base de datos de trabajos
 	@batch_base_path="_tasks"    // Ruta relativa a los binarios de Devkron en donde se encuentran los programas
 	@batch_timeout=10
+	@wait_program=@false
 }
 

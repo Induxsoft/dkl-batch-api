@@ -200,7 +200,7 @@ module "batch"
         ref db=batch.openDB()
         qname=dbr.full_qname(db)
         
-        res= exec("./dkl",'batch/batch.run.dkl "token='+@@(context,"job/id")+'" "db='+qname+'" ',@true)
+        res= exec("./dkl",'batch/batch.run.dkl "token='+@@(context,"job/id")+'" "db='+qname+'" ',@wait_program)
         
         return res
     }
