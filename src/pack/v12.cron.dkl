@@ -1,0 +1,193 @@
+#include "dkli.dkh"
+#!
+program "cron"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "batch.v12.dkl"
+    
+    //variables globales de utilida
+    @for_indefinido = 0
+    @format_fecha="yyyy-MM-dd HH:mm:ss"//
+    @format_fecha_bd="yyyy-MM-dd HH:mm:ss"
+
+    /*
+    status
+     0 -solicitado   
+     1 - en proceso
+     2 - en pausa
+    */
+    @status_job_solicitado = 0
+
+    frequency::frequency
+    {
+        switch frequency
+        {
+            case 1{return 60 * 24}
+            case 2{return ( 60 * 24 ) * 7 }
+            case 3{return ( 60 * 24 ) * 7 }
+            default{return 0}
+        }
+    }
+    parse.num.datetime::strdate,format
+    {
+        if trim(strdate)==""{return 0}
+    do print(strdate)
+        ref fecha_obj=str2dt(strdate)
+        date=date_str(fecha_obj,format)
+        date=replace(date," ","")
+        date=replace(date,"-","")
+        date=replace(date,":","")
+        date=replace(tolower(date),"t","")
+        
+        return parse.num(date)
+    }
+    //Funciones
+    nextCrontTaskLog::&db,&task
+    {
+        lc=@@(task,"$last_cycle")
+        if trim(lc)!=""{last_cycle=parse.num.datetime(lc,@format_fecha)}
+        else{last_cycle = 0}
+        
+        now=date_str(now(),@format_fecha)
+        dtnow=parse.num.datetime(now,@format_fecha)
+    
+        frequency=parse.num.datetime(@@(task,"$freq_cal"),@format_fecha)
+        
+        if last_cycle<dtnow{last_cycle=last_cycle + frequency}
+
+        lt=@@(task,"$start_log")
+        ltt=@@(task,"$start")
+        if trim(lt)!=""
+        {
+            last_time=parse.num.datetime(lt,@format_fecha)
+            fecha_last_time=lt
+        }
+        else if trim(ltt)!=""
+        {
+            last_time=parse.num.datetime(ltt,@format_fecha)
+            fecha_last_time=ltt
+        }
+        else{return }
+        
+        next_time=last_time + @@(task,"#every") 
+        
+        if @@(task,"#for")!=@for_indefinido && next_time>(last_cycle + @@(task,"#for"))
+        {
+            next_time=last_cycle + @@(task,"#every")
+        //    if trim(lc)!=""{fecha_last_time=@@(task,"$last_cycle")}
+        }
+        
+        finish=@@(task,"$finish")
+        if trim(finish)!=""{task_finish=parse.num.datetime(finish,@format_fecha)}
+        else{task_finish=0}
+        
+        if task_finish>0 && next_time> task_finish{return}
+
+        //create new crontask_log
+        new crontask_log
+        {
+            @"sys_guid":uuid()
+            @"task":@@(task,"#sys_pk")
+            @"launched":0
+            @"fecha_last_time":date_str(str2dt(fecha_last_time),@format_fecha_bd)
+            @"next_time":next_time
+            @"every":@@(task,"#every") 
+        }
+
+        do dbr.execute(db,"insert into crontask_log (sys_guid,
+                        sys_dtcreated,
+                        sys_timestamp,
+                        task,
+                        start,
+                        launched) values (@sys_guid,now(),now(),@task,date_add(@fecha_last_time,interval @every minute),@launched)",crontask_log)
+        
+        // do dbr.execute(db,"update crontask set last_cycle=date_add(@fecha_last_time,interval @every minute) where sys_pk=@task",crontask_log)
+
+    }
+    //inicia el programa
+    ref params=commandline("=")
+    if not(field.exist(params,"db")){do rise_error(0,'Debe indicar un nombre cualificado de conexión en el parámetro db con la forma "db=dbname@appgroup"')}
+    
+    ref db=dbr.open(@@(params,"$db"))
+    ref @batchDB=db //variable de la api batch que utiliza en su entorno
+    @wait_program=@false
+    //test insert crontask
+    // params_bd='{"cantidad":10}'
+    // insert="insert into crontask (
+    // sys_guid,sys_dtcreated,sys_timestamp,id,tag,jobsgroup,program,
+    // params,frequency,`every`,`for`,`start`,`finish`,disabled) values (
+    //     '"+uuid()+"',now(),now(),'test002','test0002',1,'test_insert.dkl',
+    //     '"+params_bd+"',0,5,15,now(),date_add(now(),interval 1 day),0
+    // )"
+    // do dbr.execute(db,insert,@null)
+    //-------------------------------------
+
+    tag=@@(params,"$tag")
+    
+    sql_tasks="select *,
+        (case 
+            when t.frequency= 0 then ''
+            when t.frequency= 1 then DATE_ADD(t.last_cycle,INTERVAL 1 day)
+            when t.frequency= 2 then DATE_ADD(t.last_cycle,INTERVAL 1 week)
+            when t.frequency= 3 then DATE_ADD(t.last_cycle,INTERVAL 1 month)
+        END)freq_cal
+    from crontask t WHERE IFNULL(t.disabled,0)=0 "// AND t.start>=NOW() AND t.finish<=NOW()
+    sql_tasks=sql_tasks + ifstr(trim(tag)!=""," and t.tag=@tag ","")
+
+    lanzado=1
+
+    ref record=record.create()
+    while @true
+    {
+        ref tasks=dbr.list(db,sql_tasks,params)
+        
+        for i = 0; i < @count(tasks)
+        {
+            ref task=@item(tasks,i)
+            ref task_log=dbr.rec(db,"SELECT *,(l.`start`<=NOW())lanzar FROM crontask_log l  WHERE l.task=@sys_pk ORDER BY l.sys_pk DESC LIMIT 1",task)
+            
+            task<"start_log">:@@(task_log,"$start")
+            if isnull(task_log) || @@(task_log,"#launched")
+            {
+                if @@(task_log,"#launched") && @@(task,"#frequency")!=0{do nextCrontTaskLog(db,task)}
+            }
+            else 
+            {
+                if not(@@(task_log,"#launched")) && @@(task_log,"#lanzar")
+                {
+                    if trim(@@(task,"$params"))!=""{ref params_job=from.json(@@(task,"$params"))}
+                    else{ref params_job=record.create()}
+
+                    new data_job
+                    {
+                        @"jp_ref":@@(task,"#jobsgroup")
+                        @"program":@@(task,"$program")
+                        @"owner":@@(task,"$owner")
+                        @"jstatus":@status_job_solicitado
+                        @"params*":params_job
+                    }
+                    ref job=batch.create(db,data_job)
+                    do dbr.execute(db,"update crontask_log set launched=1 where sys_pk=@sys_pk",task_log)
+                    do print(lanzado)
+                    lanzado=lanzado + 1
+
+                    exception
+                    {
+                        using task_log
+                        {
+                            @"error":1
+                            @"log":last_error()
+                        }
+                        do dbr.execute(db,"update crontask_log set launched=1 where sys_pk=@sys_pk",task_log)
+                    }
+                }
+            }
+        }
+    }
+    exception
+    {
+        do print(last_error())
+    }
+}
