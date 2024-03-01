@@ -25,6 +25,9 @@ module "batch.lib"
 	#!
 	batchDb.open::
 	{
+		ref db=@@(@http_context,"&session/idp/database") 
+		if not(isnull(db)){return db}
+
 		return dbr.open(@batch_db)
 	}
 
@@ -97,7 +100,7 @@ module "batch.lib"
 			if @@(params,"log")=="log"{return batch.getStatusJobLog(db,params)}
 			return batch.getStatusJob(db,params)
 		}
-		else if @@(params,"token_sesión")!=""
+		else if @@(params,"token_sesion")!=""
 		{
 			return batch.getStatusJobByUser(db,params)
 		}

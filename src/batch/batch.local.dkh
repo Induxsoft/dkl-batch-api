@@ -1,7 +1,7 @@
 // Funciones para gestionar la información de trabajos en proceso en la base de datos conectada
 #include "dkli.dkh"
 #!
-module
+module "batch"
 {
     #include "list_query.dk"
     #include "batch.config.dkl"
@@ -114,9 +114,9 @@ module
     {
         qname=@@(params,"database")+"@"+@@(params,"application")
 
-        ref dbuser=dbr.reconnect(qname,@@(params,"token_sesión"))
+        ref dbuser=dbr.reconnect(qname,@@(params,"token_sesion"))
 
-        new pms{@"token":@@(params,"token_sesión")}
+        new pms{@"token":@@(params,"token_sesion")}
         uid=dbr.str(dbuser,@get_dataUser,pms)
 
         new p{@"uid":uid}
@@ -132,8 +132,8 @@ module
     #!
     batch.update::&db,&data
     {
-
-        new p{
+        new p
+        {
             @"sys_pk":@@(data,"sys_pk")
             @"token":@@(data,"token")
         }
@@ -156,7 +156,6 @@ module
 
         token=if(@@(p,"$sys_pk")=="",@@(p,"$token"),@@(p,"$sys_pk"))
         
-
         do batch.saveLog(token,"Actualización terminada")
 
         return dataJob
@@ -172,7 +171,6 @@ module
         if newstatus==2 && (@@(dataj,"#status")==3 || @@(dataj,"#status")==99){do rise_error(99,"El trabajo ya se encuentra terminado o cancelado.")}
         else if newstatus==@@(dataj,"#status"){do rise_error(99,"El trabajo ya se encuentra con el estado que desea asignar.")}
         else if newstatus==99 && @@(dataj,"#status")==3{do rise_error(99,"No puede cancelarse un trabajo que ya ha terminado.")}
-
     }
 
     #!
@@ -182,8 +180,8 @@ module
         new params{@"token":token}
         do dbr.execute(db,"update job set requested_status=null,requested_status_tm=now() where sys_guid=@token",params)
     }
-    #!
 
+    #!
     get_update_job::&db,idjg
     {
         new p{@"idjg":idjg}
@@ -196,12 +194,15 @@ module
         program=path.concat(program, @@(context,"job/program"))
 
         if not(file.exists(program)) { return }
-
+        
         do batch.updateStatus(@@(context,"job/group_id"),1)
-    
-        res= exec("./dkl",'batch/batch.run.dkl "token='+@@(context,"job/id")+'"',@true)
-        // do rise_error(00,res)
 
+        ref db=batch.openDB()
+        qname=dbr.full_qname(db)
+        
+        res= exec("./dkl",'batch/batch.run.dkl "token='+@@(context,"job/id")+'" "db='+qname+'" ',@wait_program)
+        
+        return res
     }
     #!
     batch.updateStatus::token,status
@@ -255,7 +256,10 @@ module
 
     batch.finishedWithErrors::&db,error,&context
     {
-
+        new p
+        {
+           @"job_token":@@(context,"job/id")
+        }
         ref now=now()
         new joblog
         {
@@ -275,8 +279,6 @@ module
     }
 
     #!
-
-
     batch.status_requested::token
     {
         new params{@"job_token":token}
@@ -391,6 +393,37 @@ module
         do batch.saveLog(@@(status,"sys_pk"),"Trabajo creada")
 
         return data
+    }
+    #!
+    batch.registerJobsGroup::&db,&data
+    {
+        using data{@"sys_timestamp*":now()}
+
+        ref jgroups=dbr.rec(db,"select * from jobsgroup where name=@name",data)
+        if isnull(jgroups)
+        {
+            using data
+            {
+                @"sys_guid":uuid()
+                @"sys_dtcreated*":now()
+            }
+            do dbr.insert(db,"jobsgroup",data)
+            ref jgroups=dbr.rec(db,"select * from jobsgroup where name=@name",data)
+        }
+        
+        return jgroups
+    }
+
+    #!
+    batch.removeJobsGroup::&db,namejg
+    {
+        new p{@"name":name}
+        do dbr.delete(db,"jobsgroup","name=@name or sys_guid=@name",p)
+    }
+    #!
+    batch.listJobsGroup::&db
+    {
+        return dbr.list(db,"select * from jobsgroup",@null)
     }
 }
 

@@ -1,0 +1,260 @@
+#include "dkli.dkh"
+#!
+program "cron"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "batch.v12.dkl"
+    
+    do _map_function(-1, "System.DateTime", "AddMinutes","dtaddmin","System.Double","*")
+    do _map_function(-1, "System.DateTime", "AddDays","dtaddays","System.Double","*")
+    do _map_function(-1, "System.DateTime", "AddMonths","dtadmonths","System.Int32","*")
+    do _map_function(-1, "System.DateTime", "CompareTo", "dtCompare","*System.DateTime","#")
+    do _map_function(-1, "System.DateTime", "ToString", "toStr","System.String","$")
+    do _map_function(-1, "System.DateTime", "AddSeconds", "addsec","System.Double","*")
+
+    toString::&datetime
+    {
+        nf=_invoke(datetime,"toStr","")
+        return nf
+    }
+    AddSeconds::&datetime,s
+    {
+        ref ns=_invoke(datetime,"addsec", s)
+        return ns
+    }
+    addMinutes::&datetime,m
+    {
+        ref nf=_invoke(datetime,"dtaddmin", m)
+        return nf
+    }
+    addDays::&datetime,d
+    {
+        ref nd=_invoke(datetime,"dtaddays", d)
+        return nd
+    }
+    addMonths::&datetime,m
+    {
+        ref nm=_invoke(datetime,"dtadmonths", m)
+        return nm
+    }
+    compareTo::&datetime1,&datetime2
+    {
+        n=_invoke(datetime1,"dtCompare",datetime2)
+        return n
+    }
+    //variables globales de utilida
+    @for_indefinido = 0
+    @frequency_una_vez = 0
+    @format_fecha="yyyy-MM-dd HH:mm:ss"//
+    @format_fecha_bd="yyyy-MM-dd HH:mm:ss"
+    @format_date="yyyy-MM-dd"
+    @minutos_expired=-5
+    @segundos_redundante=50 
+    /*
+    status
+     0 -solicitado   
+     1 - en proceso
+     2 - en pausa
+    */
+    @status_job_solicitado = 0
+
+    getFechaByfrequency::&fecha,frequency
+    {
+        ref fr=fecha
+        switch frequency
+        {
+            case 1 //diario
+            {
+                ref fr=addDays(fecha,1)
+            }
+            case 2 //semanal
+            {
+                ref fr=addDays(fecha,7)
+            }
+            case 3 //mensual
+            {
+                ref fr=addMonths(fecha,1)
+            }
+        }
+        return fr
+    }
+
+    //Funciones
+    nextCrontTaskLog::&db,&task
+    {
+        ref last_cycle=@@(task,"&last_cycle_start")
+        ref lc_for=addMinutes(last_cycle,@@(task,"#for"))
+        
+        if not(isnull(@@(task,"&start_log")))
+        {
+            ref last_time=@@(task,"&start_log")
+            ref lt_every=addMinutes(last_time,@@(task,"#every"))
+        }
+        else 
+        {
+            ref last_time=@@(task,"&start_task")
+            ref lt_every=last_time
+        }
+
+        if compareTo(lc_for,last_time) <= 0
+        {
+            ref last_cycle=getFechaByfrequency(last_cycle,@@(task,"#frequency"))
+            new crontask_log
+            {
+                @"task":@@(task,"#sys_pk")
+                @"last_cycle*":last_cycle
+            }
+            do dbr.execute(db,"update crontask set last_cycle=@last_cycle where sys_pk=@task",crontask_log)
+        }
+
+        ref next_time=lt_every
+    
+        if @@(task,"#for")!=@for_indefinido && compareTo(next_time,last_cycle ) < 0
+        {
+           ref next_time=last_cycle //addMinutes(last_cycle , @@(task,"#every"))
+        }
+
+        ref finish=@@(task,"&finish")
+       
+        //create new crontask_log
+        new crontask_log
+        {
+            @"sys_guid":uuid()
+            @"task":@@(task,"#sys_pk")
+            @"launched":0
+            // @"fecha_last_time*":last_time
+            @"next_time*":next_time
+            @"every":@@(task,"#every") 
+            @"count_log":@@(task,"#count_log")
+        }
+
+        sql_las_cycle_start="@next_time"
+
+        if not(isnull(finish)) && ( compareTo(next_time,finish) > 0  || compareTo(next_time,addMinutes(last_cycle,@@(task,"#for"))) > 0 || compareTo(next_time,last_cycle ) < 0 )
+        {
+            return
+        }
+
+        do dbr.execute(db,"insert into crontask_log (sys_guid,
+                        sys_dtcreated,
+                        sys_timestamp,
+                        task,
+                        start,
+                        launched) values (@sys_guid,now(),now(),@task,"+sql_las_cycle_start+",@launched)",crontask_log)
+
+    }
+    funct_task::&db,&task
+    {
+        
+        ref task_log=dbr.rec(db,"SELECT *,(l.`start`<=NOW())lanzar,l.start start_log
+                        FROM crontask_log l  
+                        WHERE l.task=@sys_pk ORDER BY l.sys_pk DESC LIMIT 1",task)
+
+        using task
+        {
+            @"start_log*":@@(task_log,"&start_log")
+            @"log_launched":@@(task_log,"#launched")
+            @"count_log":@@(task_log,"#count_log")
+            @"first_launched":@@(task_log,"$first_launched")
+        }
+        
+        if isnull(task_log) || @@(task_log,"#launched")
+        {
+            do nextCrontTaskLog(db,task)
+        }
+        else 
+        {
+            if not(@@(task_log,"#launched")) && @@(task_log,"#lanzar")
+            {
+                if trim(@@(task,"$params"))!=""{ref params_job=from.json(@@(task,"$params"))}
+                else{ref params_job=record.create()}
+
+                new data_job
+                {
+                    @"jp_ref":@@(task,"#jobsgroup")
+                    @"program":@@(task,"$program")
+                    @"owner":@@(task,"$owner")
+                    @"jstatus":@status_job_solicitado
+                    @"params*":params_job
+                }
+                ref now=addMinutes(now(),@minutos_expired)
+
+                if compareTo(@@(task_log,"&start"),now) < 0
+                {
+                    do dbr.execute(db,"update crontask_log set launched=1,error=1,log='Expired',sys_timestamp=now() where sys_pk=@sys_pk",task_log)
+                }
+                else
+                {
+
+                    ref dtlast_log=dbr.rec(db,"SELECT (date_add(sys_timestamp,interval "+str(@segundos_redundante)+" second) > now())compare_date
+                        FROM crontask_log l  WHERE l.task=@task and ifnull(l.launched,0) and ifnull(l.error,0)=0 ORDER BY l.sys_pk DESC LIMIT 1",task_log)
+                    
+                    if not(isnull(dtlast_log))
+                    {
+                        if @@(dtlast_log,"#compare_date")//compareTo(@@(dtlast_log,"&sys_timestamp"),now()) > 0 
+                        {
+                            //segundos_redundante
+                            do dbr.execute(db,"update crontask_log set launched=1,error=1,log='Redundant',sys_timestamp=now() where sys_pk=@sys_pk",task_log)
+                        }
+                        else 
+                        {
+                            ref job=batch.create(db,data_job)
+                            do dbr.execute(db,"update crontask_log set launched=1,sys_timestamp=now() where sys_pk=@sys_pk",task_log)
+                        }
+                    }
+                    else 
+                    {
+                        ref job=batch.create(db,data_job)
+                        do dbr.execute(db,"update crontask_log set launched=1,sys_timestamp=now() where sys_pk=@sys_pk",task_log)
+                    }
+                }
+                
+                exception
+                {
+                    using task_log
+                    {
+                        @"error":1
+                        @"log":last_error()
+                    }
+                    do dbr.execute(db,"update crontask_log set log=@log,error=@error where sys_pk=@sys_pk",task_log)
+                }
+            }
+        }
+    }
+    //inicia el programa
+    ref params=commandline("=")
+    if not(field.exist(params,"db")){do rise_error(0,'Debe indicar un nombre cualificado de conexión en el parámetro db con la forma "db=dbname@appgroup"')}
+    
+    ref db=dbr.open(@@(params,"$db"))
+    ref @batchDB=db //variable de la api batch que utiliza en su entorno
+    @wait_program=@false
+    
+    tag=@@(params,"$tag")
+    
+    sql_tasks="select *,(t.`start`=ifnull(t.last_cycle,t.`start`))first_time,
+        ifnull(t.last_cycle,t.start) last_cycle_start,
+        t.start start_task,
+        t.finish finish_task
+        from crontask t WHERE IFNULL(t.disabled,0)=0 "// AND t.start>=NOW() AND t.finish<=NOW()
+    sql_tasks=sql_tasks + ifstr(trim(tag)!=""," and t.tag=@tag ","")
+
+    while @true
+    {
+        ref tasks=dbr.list(db,sql_tasks,params)
+        do print("Ejecutando.....")
+        
+        for i = 0; i < @count(tasks)
+        {
+            ref task=@item(tasks,i)
+            do funct_task(db,task)
+        }
+    }
+
+    exception
+    {
+        do print(last_error())
+    }
+
+}
