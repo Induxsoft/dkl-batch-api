@@ -1,0 +1,71 @@
+#include "dkli.dkh"
+#!
+
+module "model"
+{
+    @table_name = "jobsgroup"
+    @list_query = "
+        SELECT jg.sys_pk, jg.name, jg.apikey
+        FROM jobsgroup AS jg
+        WHERE IF(IFNULL(@s,'')='', true, (jg.name LIKE CONCAT('%',@s,'%') OR jg.apikey LIKE CONCAT('%',@s,'%'))) AND IFNULL(jg.sys_deleted,0) = 0 ORDER BY jg.name
+    "
+
+    function jobsgroup_create(&db, &params, &data)
+    {
+        data<"apikey">: toupper(md5(@@(data,"apikey")))
+        ref res = entity.create(db, params, data)
+
+        exception 
+        {
+            do prepare_view(db, data)
+            do rise_error(0, last_error())
+        }
+    }
+
+    function jobsgroup_update(&db, &params, &data)
+    {
+        ref res = entity.create(db, params, data)
+
+        exception 
+        {
+            do prepare_view(db, data)
+            do rise_error(0, last_error())
+        }
+    }
+
+    function jobsgroup_read(&db, &params)
+    {
+        ref res = entity.read(db, params)
+        do prepare_view(db, res)
+        return res
+    }
+
+    function jobsgroup_delete(&db, &params)
+    {
+        do entity.delete(db, params)
+
+        exception {}
+
+        return @true
+    }
+
+    function jobsgroup_blank(&db, &params)
+    {
+        new res {}
+        do prepare_view(db, res)
+        return res
+    }
+
+    function prepare_view(&db, &res)
+    {
+        query = "SELECT sys_pk, name, apikey FROM jobsgroup"
+        res<"jobsgroup*">: dbr.list(db, query, @null)
+        return res
+    }
+
+    point @create to jobsgroup_create
+    point @update to jobsgroup_update
+    point @read to jobsgroup_read
+    point @delete to jobsgroup_delete
+    point @blank to jobsgroup_blank
+}
