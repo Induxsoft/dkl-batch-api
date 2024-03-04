@@ -3,6 +3,7 @@
 #!
 module "batch"
 {
+    #include "functions.dkh"
     #include "list_query.dk"
     #include "batch.config.dkl"
 
@@ -129,6 +130,7 @@ module "batch"
         new p{@"sys_pk":@@(params,"job_token")}
         return dbr.rec(db,@get_dataJobStatus,p)
     }
+
     #!
     batch.update::&db,&data
     {
@@ -204,6 +206,7 @@ module "batch"
         
         return res
     }
+
     #!
     batch.updateStatus::token,status
     {
@@ -214,6 +217,7 @@ module "batch"
         }
         do dbr.execute(batch.openDB(),@updateStatusByTokenOrPk,p)
     }
+
     batch.saveLog::token,msg
     {
         ref now=now()
@@ -228,6 +232,7 @@ module "batch"
         }
         do dbr.insert(batch.openDB(),"joblog",joblog)
     }
+
     batch.finishedSuccess::&db,&context
     {
         if isnull(db){ref db=batch.openDB()}
@@ -351,6 +356,7 @@ module "batch"
         }
         return @false
     }
+
     batch.cancel_requested::&jobinfo, msg
     {
         if @@(jobinfo,"#requested_status")==99
@@ -370,7 +376,6 @@ module "batch"
         }
         return @false
     }
-
 
     #!
     batch.assign_status::&db,action,idjg
@@ -394,6 +399,7 @@ module "batch"
 
         return data
     }
+
     #!
     batch.registerJobsGroup::&db,&data
     {
@@ -420,10 +426,42 @@ module "batch"
         new p{@"name":name}
         do dbr.delete(db,"jobsgroup","name=@name or sys_guid=@name",p)
     }
+
     #!
     batch.listJobsGroup::&db
     {
         return dbr.list(db,"select * from jobsgroup",@null)
+    }
+
+    #!
+    batch.addTask::groupidOrname,progname,dklcode
+    {
+        ruta_programas = @batch_base_path + groupidOrname
+        ruta_nuevo_archivo = ruta_programas + "/" + progname
+        
+        do dir.ensure(ruta_programas)
+        do file.wtext(ruta_nuevo_archivo, dklcode)
+    }
+
+    #!
+    batch.updateTask::groupidOrname,progname,dklcode
+    {
+        ruta_archivo = @batch_base_path + groupidOrname + "/" + progname
+        do file.wtext(ruta_archivo, dklcode)
+    }
+
+    #!
+    batch.removeTask::groupidOrname,progname
+    {
+        ruta_archivo = @batch_base_path + groupidOrname + "/" + progname
+        do file.delete(ruta_archivo)
+    }
+
+    #!
+    batch.listTask::groupidOrname
+    {
+        ruta_carpeta = @batch_base_path + groupidOrname
+        return list.files(ruta_carpeta, "*.*")
     }
 }
 
