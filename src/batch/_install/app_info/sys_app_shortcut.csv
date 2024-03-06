@@ -1,0 +1,3 @@
+"id","title","icon96x96","src","_blank","appid","cat"
+"batch.crontask","Tareas programadas","/$/batch/img/icons/crontask-96x96.png","/!/batch/crontask/","0","crontask","0090"
+"batch.jobsgroup","Grupos de tareas","/$/batch/img/icons/jobsgroup-96x96.png","/!/batch/jobsgroup/","0","jobsgroup","0090"

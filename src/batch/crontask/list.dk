@@ -5,7 +5,7 @@ module "list"
     #include "functions.dkh"
     #include "serialize.dkh"
     #include "uielements.v12.dkl"
-    #include "../config.dk"
+    #include "../batch.config.dk"
 
     do @context.begin(@crud_context)
     ref @http_context = @('&http')
