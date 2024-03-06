@@ -7,6 +7,7 @@ module "Controller configs"
 	#include "serialize.dkh"
 	#include "dbr.dkh"
 	#include "crudl/crudl.dk"
+	#include "batch.config.dkl"
 
     @base_path = "batch"
     @path_root = "" // Establezca una ruta de ser necesario
@@ -47,9 +48,15 @@ module "Controller configs"
 		"access":[{"workspace":"'+@ws+'"}]
 	}'
 
-	@expected_html=contains(tolower(replace(@@(@http_context,"request/headers/HTTP_ACCEPT")," ","")),"text/html")
+	//URL para brindar acceso a los servicios Web previstos por batch y con autorización (auth basic)
+	// POST,GE url="/!/batch/jobs/?jobs=&job_token="
+    // GET url="/!/batch/jobs/?application=&database=&token_sesion="
+    // GET url="/!/batch/jobs/?job_token=&log="
+    // POST url="/!/batch/jobs/?job_token=&action="
 
-	if @expected_html
+    
+
+	if not(crudl.route("/jobs/"))
 	{
 		if @@(@http_context,"$session/user/ids") == ""
 		{
@@ -60,7 +67,6 @@ module "Controller configs"
 	}
 	else
 	{
-		if @@(@http_context,"$session/user/ids") == "" { do rise_error(500,"Sesión inválida") }
 		#include "batch.endpoint.dkl"
 	}
     

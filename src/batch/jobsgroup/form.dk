@@ -6,7 +6,7 @@ module "form.dk"
     #include "functions.dkh"
     #include "serialize.dkh"
     #include "uielements.dkl"
-    #include "../config.dk"
+    #include "../batch.config.dkl"
 
     do @context.begin(@crud_context)
     
