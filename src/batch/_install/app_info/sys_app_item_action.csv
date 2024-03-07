@@ -1,0 +1,9 @@
+"id","title","shorttitle","icon16x16","href","_blank","appid","itemtype","req_context_item_id","act_type"
+
+"XA11","Agregar tarea programada","Agregar","","/!/batch/crontask/_new/","0","batch.crontask","crontask","0","action"
+"XA12","Editar tarea programada","Editar","","/!/batch/crontask/@_src_context_item_id/","0","batch.crontask","crontask","1","action"
+"XA13","Eliminar tarea programada","Eliminar","","javascript:InduxsoftCrudlModel.Delete(@_src_context_item_id);","0","batch.crontask","crontask","1","action"
+
+"XA21","Agregar grupo de tareas","Agregar","","/!/batch/jobsgroup/_new/","0","batch.jobsgroup","taskgroup","0","action"
+"XA22","Editar grupo de tareas","Editar","","/!/batch/jobsgroup/@_src_context_item_id/","0","batch.jobsgroup","taskgroup","1","action"
+"XA23","Eliminar grupo de tareas","Eliminar","","javascript:InduxsoftCrudlModel.Delete(@_src_context_item_id);","0","batch.jobsgroup","taskgroup","1","action"
