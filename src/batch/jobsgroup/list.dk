@@ -15,18 +15,25 @@ module "list"
     new table_definition
     {
         @"datatable*": listJobsGroup
-        @"table_footer": "Mostrando los primeros # grupos de tareas ordenados por nombre."
+        @"table_footer": "Mostrando los primeros # grupos de tareas."
         member @"columns"
         {
             member @"name" { @"caption":"Nombre" }
-            member @"apikey" { @"caption":"Digestión MD5 de la contraseña" }
             member @"_actions" 
             { 
                 @"caption":"Acciones" 
                 @"template":'
                 <div style="display:flex;gap:8px;justify-content: center;width:100%" class="no-print">
-                    <a href="./${DataRow.sys_pk}/" class="no-print" style="cursor:pointer; border: none; text-decoration:none; outline: none; padding: 0 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem">Editar</a>
-                    <button onclick="InduxsoftCrudlModel.Delete(${DataRow.sys_pk})" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem">Eliminar</button>
+                    <a
+                        href="./${DataRow.sys_pk}/" class="no-print" style="cursor:pointer; border: none; text-decoration:none; outline: none; padding: 0 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"
+                    >
+                        Editar
+                    </a>
+                    <button
+                        onclick="InduxsoftCrudlModel.Delete(${DataRow.sys_pk})" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"
+                    >
+                        Eliminar
+                    </button>
                 </div>'
                 @"no-print":@true
             }
@@ -35,8 +42,7 @@ module "list"
 
     header_act::
     { 
-        #$
-        a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print" href="#<@BATCH_JOBS_GROUP>_new/"){$"Agregar"}
+        #$ a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print" href="#<@BATCH_JOBS_GROUP>_new/"){$"Agregar"}
     }
 
     #! point general_act to header_act
@@ -75,8 +81,6 @@ module "list"
             }
 
             #! do uie.dbeditable(table_definition, "tbl_jobsgroup")
-
-            #$ small(class="text-secondary"){$"#<a1>"}
         }
     }
 }

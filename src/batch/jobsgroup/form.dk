@@ -11,6 +11,7 @@ module "form.dk"
     do @context.begin(@crud_context)
     
     ref jobsgroup = ifnull(@("&."),record.create())
+
     entity_id = @("$parameters/_entity_id")
     error = @("$error/message")
     isNew = (entity_id == "_new")
@@ -30,14 +31,16 @@ module "form.dk"
 
                 div(class="col-8 d-flex align-items-center justify-content-end p-0 gap-2")
                 {
-                    a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@@(@icons,'ARROW_CLOCKWISE')>"}
-                    button(type="submit" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Guardar"){
-                        $'#<@@(@icons,"save2")>'
+                    a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar") {
+                        $"#<@@(@icons,'ARROW_CLOCKWISE')>"
                     }
+
+                    button(type="submit" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Guardar") {
+                        $"#<@@(@icons,'save2')>"
+                    }
+
                     a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action" href="#<@BATCH_JOBS_GROUP>" title="Salir") {
-                        svg(xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16") {
-                            path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z")
-                        }
+                        $"#<@@(@icons,'X')>"
                     }
                 }
             }
@@ -57,19 +60,14 @@ module "form.dk"
                             small(class="fw-bold"){$"Nombre:"}
                             input(type="text" class="induxsoft-form-control mb-2" name="name" value="#<@@(jobsgroup, '$name')>" required="true" maxlength="150")
                         }
-                        div(class="col-sm-8")
-                        {
-                            small(class="fw-bold"){$"Digestión MD5 de la contraseña:"}
 
-                            #! if isNew
+                        #! if not(isNew) {
+                            #$ div(class="col-sm-4")
                             {
-                                #$ input(type="text" class="induxsoft-form-control mb-2" name="apikey" value="#<@@(jobsgroup, '$apikey')>" required="true" maxlength="32")
+                                button(type="button" class="btn btn-sm btn-light induxsoft-corners d-block mb-2 border" "data-bs-toggle"="modal" "data-bs-target"="#modal_change_pwd") {
+                                    $"Cambiar contraseña"
+                                }
                             }
-                            #! else
-                            {
-                                #$ input(type="text" class="induxsoft-form-control mb-2" value="#<@@(jobsgroup, '$apikey')>" maxlength="32" disabled="true")
-                            }
-                            
                         }
                     }
                 }
@@ -78,6 +76,40 @@ module "form.dk"
             div(id="status_bar" class="container-section")
             {
                 $""
+            }
+        }
+
+        // Modal modificar contraseña
+        #! if not(isNew)
+        {
+            #$ div(class="modal fade" id="modal_change_pwd" tabindex="-1" "aria-hidden"="true" "data-bs-backdrop"="false")
+            {
+                div(class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable mt-0")
+                {
+                    div(class="modal-content induxsoft-corners p-0 border-0 shadow")
+                    {
+                        div(class="modal-header p-3")
+                        {
+                            h6(class="modal-title"){$"Cambiar apikey"}
+                            button(type="button" class="btn-close btn-sm" "data-bs-dismiss"="modal" "aria-label"="Close"){$""}
+                        }
+
+                        div(class="modal-body p-4 bg-white" id="mdl_cpwd_controls")
+                        {
+                            input(type="hidden" name="sys_pk" value="#<@@(jobsgroup, '#sys_pk')>")
+                            input(type="hidden" name="sys_recver" value="#<@@(jobsgroup, '#sys_recver')>")
+
+                            small(class="fw-bold"){$"Digestión MD5 de la contraseña:"}
+                            input(type="password" class="induxsoft-form-control mb-2" value="#<@@(jobsgroup, '$apikey')>")
+                        }
+
+                        div(class="modal-footer")
+                        {
+                            button(type="button" class="btn btn-sm btn-primary" onclick="tuser.changePwd()") {$"Aceptar"}
+                            button(type="button" class="btn btn-sm btn-light" "data-bs-dismiss"="modal"){$"Cancelar"}
+                        }
+                    }
+                }
             }
         }
     }
