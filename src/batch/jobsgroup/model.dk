@@ -13,6 +13,7 @@ module "model"
     function jobsgroup_create(&db, &params, &data)
     {
         data<"apikey">: toupper(md5(@@(data,"apikey")))
+
         ref res = entity.create(db, params, data)
 
         exception 
@@ -24,6 +25,14 @@ module "model"
 
     function jobsgroup_update(&db, &params, &data)
     {
+        if (@@(data,"newPwd") == "true") {
+            data<"apikey">: toupper(md5(@@(data,"apikey")))
+        }
+
+        do field.remove(data,"newPwd")
+
+        //do rise_error(0,to.json(data))
+
         ref res = entity.create(db, params, data)
 
         exception 

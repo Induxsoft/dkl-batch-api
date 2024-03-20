@@ -20,7 +20,7 @@ module "form.dk"
     #$
     div(class="container p-0")
     {
-        form(method="POST" action=".")
+        form(method="POST" action="." id="form")
         {
             div(id="main_bar" class="row container-section my-2 px-0 py-2 border-bottom")
             {
@@ -61,56 +61,33 @@ module "form.dk"
                             input(type="text" class="induxsoft-form-control mb-2" name="name" value="#<@@(jobsgroup, '$name')>" required="true" maxlength="150")
                         }
 
-                        #! if not(isNew) {
+                        #! if isNew {
                             #$ div(class="col-sm-4")
                             {
-                                button(type="button" class="btn btn-sm btn-light induxsoft-corners d-block mb-2 border" "data-bs-toggle"="modal" "data-bs-target"="#modal_change_pwd") {
-                                    $"Cambiar contraseña"
-                                }
+                                small(class="fw-bold"){$"Contraseña:"}
+                                input(type="password" class="induxsoft-form-control mb-2" name="apikey" required="true" maxlength="32")
+                            }
+                        } #! else {
+                            #$ input(type="hidden" name="apikey" value="#<@@(jobsgroup, '$apikey')>" id="apikey")
+                            #$ input(type="hidden" name="newPwd" id="newPwd")
+
+                            #$ div(class="col-sm-4")
+                            {            
+                                small{$"Contraseña (opcional):"}
+                                input(type="password" class="induxsoft-form-control mb-2" maxlength="32" id="pwd1")
+                            }
+
+                            #$ div(class="col-sm-4")
+                            {
+                                small{$"Confirmar contraseña (opcional):"}
+                                input(type="password" class="induxsoft-form-control mb-2" maxlength="32" id="pwd2")
                             }
                         }
                     }
                 }
             }
-            
-            div(id="status_bar" class="container-section")
-            {
-                $""
-            }
         }
 
-        // Modal modificar contraseña
-        #! if not(isNew)
-        {
-            #$ div(class="modal fade" id="modal_change_pwd" tabindex="-1" "aria-hidden"="true" "data-bs-backdrop"="false")
-            {
-                div(class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable mt-0")
-                {
-                    div(class="modal-content induxsoft-corners p-0 border-0 shadow")
-                    {
-                        div(class="modal-header p-3")
-                        {
-                            h6(class="modal-title"){$"Cambiar apikey"}
-                            button(type="button" class="btn-close btn-sm" "data-bs-dismiss"="modal" "aria-label"="Close"){$""}
-                        }
-
-                        div(class="modal-body p-4 bg-white" id="mdl_cpwd_controls")
-                        {
-                            input(type="hidden" name="sys_pk" value="#<@@(jobsgroup, '#sys_pk')>")
-                            input(type="hidden" name="sys_recver" value="#<@@(jobsgroup, '#sys_recver')>")
-
-                            small(class="fw-bold"){$"Digestión MD5 de la contraseña:"}
-                            input(type="password" class="induxsoft-form-control mb-2" value="#<@@(jobsgroup, '$apikey')>")
-                        }
-
-                        div(class="modal-footer")
-                        {
-                            button(type="button" class="btn btn-sm btn-primary" onclick="tuser.changePwd()") {$"Aceptar"}
-                            button(type="button" class="btn btn-sm btn-light" "data-bs-dismiss"="modal"){$"Cancelar"}
-                        }
-                    }
-                }
-            }
-        }
+        script(src="#<@JS_JOBSGROUP>"){$""}
     }
 }
