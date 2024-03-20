@@ -5,6 +5,7 @@ module "config"
 {
     // _STATIC
     @JS_CRONTASK = "/$/batch/js/crontask.js"
+    @JS_JOBSGROUP = "/$/batch/js/jobsgroup.js"
 
 	// _PACKAGE
 	@BATCH_JOBS_GROUP = "/!/batch/jobsgroup/"
@@ -14,7 +15,6 @@ module "config"
     @BATCH_ADD_EDIT_CRONTASK = "/!/batch/crontask/@id/"
 
 	@icon_color = "#888"
-
 
     @batch_db="batch@MaxiComercio.R5"
 	@batch_base_path="_tasks"

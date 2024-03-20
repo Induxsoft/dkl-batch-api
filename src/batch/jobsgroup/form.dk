@@ -61,27 +61,63 @@ module "form.dk"
                             input(type="text" class="induxsoft-form-control mb-2" name="name" value="#<@@(jobsgroup, '$name')>" required="true" maxlength="150")
                         }
 
-                        #! if isNew {
+                        #! if isNew
+                        {
                             #$ div(class="col-sm-4")
                             {
                                 small(class="fw-bold"){$"Contraseña:"}
-                                input(type="password" class="induxsoft-form-control mb-2" name="apikey" required="true" maxlength="32")
-                            }
-                        } #! else {
-                            #$ input(type="hidden" name="apikey" value="#<@@(jobsgroup, '$apikey')>" id="apikey")
-                            #$ input(type="hidden" name="newPwd" id="newPwd")
+                                input(type="password" class="induxsoft-form-control mb-2" required="true" maxlength="32" name="apikey" id="pwd1")
 
-                            #$ div(class="col-sm-4")
-                            {            
-                                small{$"Contraseña (opcional):"}
-                                input(type="password" class="induxsoft-form-control mb-2" maxlength="32" id="pwd1")
+                                #$ small(class="text-danger d-block" id="pwdMsg1"){$""}
                             }
 
                             #$ div(class="col-sm-4")
                             {
-                                small{$"Confirmar contraseña (opcional):"}
-                                input(type="password" class="induxsoft-form-control mb-2" maxlength="32" id="pwd2")
+                                small(class="fw-bold"){$"Confirmar contraseña:"}
+                                input(type="password" class="induxsoft-form-control mb-2" required="true" maxlength="32" id="pwd2")
                             }
+                        }
+                        #! else {
+                            #$ input(type="hidden" name="apikey" value="#<@@(jobsgroup, '$apikey')>" id="apikey")
+                            #$ input(type="hidden" name="newPwd" id="newPwd")
+
+                            #$ div(class="col-sm-6 d-flex align-items-end mb-1")
+                            {
+                                button(type="button" class="btn btn-sm btn-light induxsoft-corners d-block mb-2 border" "data-bs-toggle"="modal" "data-bs-target"="#modal_change_pwd"){$"Cambiar contraseña"}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        #! if not(isNew)
+        {
+            #$ div(class="modal fade" id="modal_change_pwd" tabindex="-1" "aria-hidden"="true" "data-bs-backdrop"="false")
+            {
+                div(class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable mt-0")
+                {
+                    div(class="modal-content induxsoft-corners p-0 border-0 shadow")
+                    {
+                        div(class="modal-header p-3")
+                        {
+                            h6(class="modal-title"){$"Cambiar contraseña"}
+                            button(type="button" class="btn-close btn-sm" "data-bs-dismiss"="modal" "aria-label"="Close"){$""}
+                        }
+                        div(class="modal-body p-4 bg-white" id="mdl_cpwd_controls")
+                        {
+                            small{$"Nueva contraseña:"}
+                            input(type="password" class="induxsoft-form-control mb-2" name="pwd" id="pwd1" maxlength="32")
+
+                            small{$"Confirmar contraseña:"}
+                            input(type="password" class="induxsoft-form-control mb-2" name="pwd_confirm" id="pwd2" maxlength="32")
+
+                            small(class="text-danger d-block" id="pwdMsg2"){$""}
+                        }
+                        div(class="modal-footer")
+                        {
+                            button(type="button" class="btn btn-sm btn-primary" onclick="jobsgroup.changePassword()"){$"Aceptar"}
+                            button(type="button" class="btn btn-sm btn-light" "data-bs-dismiss"="modal"){$"Cancelar"}
                         }
                     }
                 }

@@ -31,8 +31,6 @@ module "model"
 
         do field.remove(data,"newPwd")
 
-        //do rise_error(0,to.json(data))
-
         ref res = entity.create(db, params, data)
 
         exception 
