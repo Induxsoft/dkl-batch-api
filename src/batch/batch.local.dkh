@@ -460,13 +460,21 @@ module "batch"
         do dir.ensure(ruta_programas)
         do file.delete(ruta_archivo)
     }
+    batch.list_programs::groupid
+    {
+        ref programs=batch.listTask(groupid)
+        @filter_files="*.dk"
+        ref programas_dk=batch.listTask(groupid)
+        for i = 0; i < @count(programas_dk){do list.add(programs,list.str(programas_dk,i))}
 
+        return programs
+    }
     #!
     batch.listTask::groupidOrname
     {
         ruta_programas = path.concat(@batch_base_path,groupidOrname)
         do dir.ensure(ruta_programas)
-        return list.files(ruta_programas, "*.*")
+        return list.files(ruta_programas, @filter_files)
     }
     #!
     batch.last_error::&db,groupid,name_program

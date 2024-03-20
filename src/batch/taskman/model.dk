@@ -7,7 +7,16 @@ module ""
     @table_name="jobsgroup"   
     @list_query="select *,date_format(sys_dtcreated,'%Y-%m-%d')created from jobsgroup limit 200"
 
-    
+    taskman.exist.file::groupid,name_file
+    {
+        ref programas=batch.list_programs(groupid)
+        for i = 0; i < @count(programas)
+        {
+            file=list.str(programas,i)
+            if file.justname(file)==file.justname(name_file){return @true}
+        }
+        return @false
+    }
     taskman.save::&db,&params,&data
     {
         ref  jg=dbr.rec(db,"select sys_pk,sys_guid from jobsgroup where sys_pk=@_entity_id",params)
@@ -25,7 +34,11 @@ module ""
                 filename=limpiarTexto(@@(f,"$filename"))
                 ext=file.extension(file.name(filename))
                 
-                if ext!=".dkl" && ext!=".dk" && ext!=".dkh"{do rise_error(500,"No se admite otros programas que no sean .dkl,.dk,.dkh")}
+                if ext==".json" 
+                {
+                  if not(taskman.exist.file(@@(jg,"$sys_guid"),filename)){do rise_error(500,"Debe subir primero un archivo dkl o dk con el mismo nombre del archivo .json ")} 
+                }
+                else if ext!=".dkl" && ext!=".dk" {do rise_error(500,"No se admite otros programas que no sean .dkl,.dk,.dkh")}
 
                 path_file=path.concat(base_path_jg,filename)
                 do file.copy(@@(f,"$temp_file"),path_file)
@@ -37,6 +50,11 @@ module ""
             if file.extension(name_program)==""{name_program=name_program+".dkl"}
 
             do batch.addTask(@@(jg,"$sys_guid"),name_program,@@(data,"$content_dkl"))
+
+            if trim(@@(data,"$config_params"))!=""
+            {
+                do batch.addTask(@@(jg,"$sys_guid"),file.justname(name_program)+".json",@@(data,"$config_params"))
+            }
         }
         else if field.exist(params,"run")
         {

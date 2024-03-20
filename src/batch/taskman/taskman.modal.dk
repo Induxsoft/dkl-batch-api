@@ -24,8 +24,25 @@ module "modals"
                     label{"Nombre del programa:"}
                     input(class="induxsoft-form-control" id="name_program" maxlength="32")
 
-                    label{"Contenido:"}
-                    textarea(class="induxsoft-form-control" id="content_dkl" style="height: 310px;"){""}
+                    label{"Código dkl:"}
+                    textarea(class="induxsoft-form-control" id="content_dkl" style="height: 210px;"){""}
+
+                    label{"Configuración de parámetros:"}
+                    textarea(class="induxsoft-form-control" id="config_params" style="height: 110px;"
+                    placeholder="{
+    \"nombre_parámetro\":
+     {
+        \"control\":\"text/intcolor/hexcolor/date/datetime/time/select/textarea\",
+        \"source\":
+        {
+            \"type\":\"list/query\",
+            \"values\":[],
+            \"query\":\"Consulta SQL que obtiene los valores\",
+            \"showfield\":\"Campo a mostrar\",
+            \"keyfield\":\"Campo cuyo valor se almacena\"
+        }
+    }
+}"){""}
                 }
                 div(class="modal-footer" id="ftrAddClt")
                 {

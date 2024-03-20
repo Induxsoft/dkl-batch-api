@@ -13,6 +13,7 @@ var taskman=
 
         taskman.name_program=document.getElementById("name_program");
         taskman.content_dkl=document.getElementById("content_dkl");
+        taskman.config_params=document.getElementById("config_params");
     },  
     uploadProgram()
     {
@@ -53,10 +54,25 @@ var taskman=
             taskman.content_dkl.focus();
             return;
         }
+        var config_params="";
+        if(taskman.config_params && taskman.config_params.value.trim()!="")
+        {
+            config_params=taskman.config_params.value.trim();
+            try 
+            {
+                JSON.parse(config_params);   
+            } catch (error) 
+            {
+                alert(error);
+                taskman.config_params.focus();
+                return;    
+            }
+        }
         var data=
         {
             name_program:taskman.name_program.value.trim(),
-            content_dkl:taskman.content_dkl.value.trim()
+            content_dkl:taskman.content_dkl.value.trim(),
+            config_params:config_params
         }
 
         InduxsoftCrudlModel.InvokeService(taskman.url.replace("{id}",taskman._entity_id)+"?create=1", data,
@@ -82,6 +98,7 @@ var taskman=
             } catch (error) 
             {
                 alert(error);
+                element_params.focus();
                 return;
             }
         }

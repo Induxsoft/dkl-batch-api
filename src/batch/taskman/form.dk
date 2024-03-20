@@ -19,7 +19,8 @@ module "form.dk"
     isNew = (entity_id == "_new")
 
     ref programs_jg=list.create()
-    ref programs=batch.listTask(@@(jobsgroup,"$sys_guid"))
+    ref programs=batch.list_programs(@@(jobsgroup,"$sys_guid"))
+
     for i = 0; i <@count(programs)
     {
         file=list.str(programs,i)
@@ -87,7 +88,7 @@ module "form.dk"
             }
         }
         p{$"#<erorr>"}
-        input(type="file" class="d-none" name="file_program" id="file_program" accept=".dkl,.dk,.dkh")
+        input(type="file" class="d-none" name="file_program" id="file_program" accept=".dkl,.dk,.json")
 
         label("for"="file_program" class="btn btn-sm m-1 induxsoft-corners border-secondary btn-main-action" onclick=""){"Subir programa"}
         button(class="btn btn-sm m-1 induxsoft-corners border-secondary btn-main-action" onclick="taskman.showModal('mdl_create_program');"){"Crear programa"}

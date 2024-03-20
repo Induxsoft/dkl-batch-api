@@ -28,6 +28,7 @@ module "config"
 
 	@icon_color = "#888"
 
+    @filter_files="*.dkl"
 
 	new @icons
     {
