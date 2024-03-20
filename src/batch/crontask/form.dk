@@ -18,6 +18,14 @@ module "form.dk"
     isNew = (entity_id == "_new")
     action = replace(@BATCH_ADD_EDIT_CRONTASK, "@id", entity_id)
 
+    text jsonPrograms
+    {$'[
+        {"id":0,"const":"Program 1"}
+        {"id":1,"const":"Program 2"}
+        {"id":2,"const":"Program 3"}
+        {"id":3,"const":"Program 4"}
+    ]'}
+    
     text jsonFrequency
     {$'[
         {"id":0,"const":"0 - Una vez"}
@@ -45,6 +53,7 @@ module "form.dk"
         {"id":1440,"const":"1 día"}
     ]'}
 
+    ref listPrograms = from.json(jsonPrograms)
     ref listFrequency = from.json(jsonFrequency)
     ref listEvery = from.json(jsonEvery)
     ref listFor = from.json(jsonFor)
@@ -62,6 +71,18 @@ module "form.dk"
         @"value_field": "sys_pk"
         @"text_field": "name"
         @"selected": @@(crontask,"$jobsgroup")
+    }
+
+    new sel_programs
+    {
+        @"datatable*": listPrograms
+        @"id": "sel_programs"
+        new member "attributes"
+        {
+            @"class": "form-select rounded-0 mb-2"
+        }
+        @"value_field": "id"
+        @"text_field": "const"
     }
 
     new sel_frequency
@@ -167,84 +188,108 @@ module "form.dk"
                     input(type="hidden" name="sys_pk" value="#<@@(crontask, '#sys_pk')>")
                     input(type="hidden" name="sys_recver" value="#<@@(crontask, '#sys_recver')>")
 
-                    div(class="row")
+                    ul(class="nav nav-tabs mt-3" role="tablist")
                     {
-                        div(class="col-sm-4") {
-                            small(class="fw-bold"){"Grupo de tareas:"}
-                            div(class="col-auto") {
-                                ##
-                                do uie.dbSelect(sel_jobsgroup)
-                                ##
+                        li(class="nav-item" role="presentation") {
+                            button(class="nav-link active" id="general-tab" "data-bs-toggle"="tab" "data-bs-target"="#general" type="button" role="tab" "aria-controls"="general" "aria-selected"="true"){$"General"}
+                        }
+
+                        li(class="nav-item" role="presentation") {
+                            button(class="nav-link" id="avanzado-tab" "data-bs-toggle"="tab" "data-bs-target"="#avanzado" type="button" role="tab" "aria-controls"="avanzado" "aria-selected"="false"){$"Avanzado"}
+                        }
+                    }
+
+                    div(class="tab-content" id="tabContent")
+                    {
+                        div(class="tab-pane fade show active" id="general" role="tabpanel" "aria-labelledby"="general-tab")
+                        {
+                            div(class="row mb-4 mt-4")
+                            {
+                                div(class="col-sm-4") {
+                                    small(class="fw-bold"){"Grupo de tareas:"}
+                                    div(class="col-auto") {
+                                        ##
+                                        do uie.dbSelect(sel_jobsgroup)
+                                        ##
+                                    }
+                                }
+
+                                div(class="col-sm-4") {
+                                    small(class="fw-bold"){"Programa:"}
+                                    div(class="col-auto") {
+                                        ##
+                                        do uie.dbSelect(sel_programs)
+                                        ##
+                                    }
+                                }
+
+                                div(class="col-sm-4") {
+                                    small{"Nombre:"}
+                                    input(type="text" class="induxsoft-form-control mb-2" name="id" value="#<@@(crontask, '$id')>" required="true" maxlength="32")
+                                }
+
+                                div(class="col-sm-4") {
+                                    small(class="fw-bold"){"Frecuencia:"}
+                                    div(class="col-auto") {
+                                        ##
+                                        do uie.dbSelect(sel_frequency)
+                                        ##
+                                    }
+                                }
+
+                                div(class="col-sm-2") {
+                                    small(class="fw-bold"){"Repetir cada:"}
+                                    div(class="col-auto") {
+                                        ##
+                                        do uie.dbSelect(sel_every)
+                                        ##
+                                    }
+                                }
+
+                                div(class="col-sm-2") {
+                                    small(class="fw-bold"){"Durante:"}
+                                    div(class="col-auto") {
+                                        ##
+                                        do uie.dbSelect(sel_for)
+                                        ##
+                                    }
+                                }
+
+                                div(class="col-sm-4") {
+                                    small(class="fw-bold"){"Inicio:"}
+                                    input(type="datetime-local" class="induxsoft-form-control mb-2" name="start" value="#<formatDateTime(@@(crontask, '$start'))>")
+                                }
+
+                                input(type="datetime-local" name="last_cycle" hidden="true")
+
+                                div(class="col-sm-4") {
+                                    small(class="fw-bold"){"Expiración:"}
+                                    input(type="datetime-local" class="induxsoft-form-control mb-2" name="finish" value="#<formatDateTime(@@(crontask, '$finish'))>")
+                                }
+
+                                div(class="col-sm-4 chbox-group mt-2") {
+                                    input(type="checkbox" class="form-check-input induxsoft-corners" id="check_disabled" "#<ifstr(@@(crontask,'#disabled')==1,'checked','')>"="true")
+                                    label(class="form-check-label" "for"="check_disabled")
+                                    {"Desactivado"}
+                                    input(type="hidden" name="disabled" id="ipt_disabled" value="#<@@(crontask,'#disabled')>")
+                                }
                             }
                         }
 
-                        div(class="col-sm-4 d-flex align-items-center") {
-                            small(class="fw-bold"){"Programa:"}
+                        div(class="tab-pane fade" role="tabpanel" id="avanzado")
+                        {
+                            div(class="row mb-4 mt-4")
+                            {
+                                div(class="col-sm-4") {
+                                    small{"Tag:"}
+                                    input(type="text" class="induxsoft-form-control mb-2" name="tag" value="#<@@(crontask, '$tag')>" maxlength="32")
+                                }
 
-                            span(class="flex-grow-1"){""}
-                            input(type="file" class="form-control form-control-sm rounded-0 d-none" name="program" id="txt_adjuntos" required="true")
-                            label(class="btn btn-primary btn-sm rounded-0" "for"="txt_adjuntos" title="Subir archivos"){$"Adjuntar"}
-                        }
-
-                        div(class="col-sm-4") {
-                            small{"Nombre:"}
-                            input(type="text" class="induxsoft-form-control mb-2" name="id" value="#<@@(crontask, '$id')>" required="true" maxlength="32")
-                        }
-
-                        div(class="col-sm-4") {
-                            small{"Parámetros:"}
-                            input(type="text" class="induxsoft-form-control mb-2" name="params" value="#<@@(crontask, '$params')>")
-                        }
-
-                        div(class="col-sm-4") {
-                            small(class="fw-bold"){"Frecuencia:"}
-                            div(class="col-auto") {
-                                ##
-                                do uie.dbSelect(sel_frequency)
-                                ##
+                                div(class="col-sm-12") {
+                                    small{"Parámetros:"}
+                                    textarea(class="form-control" name="params" value="#<@@(crontask, '$params')>") {$"#<@@(crontask, '$params')>"}
+                                }
                             }
-                        }
-
-                        div(class="col-sm-2") {
-                            small(class="fw-bold"){"Repetir cada:"}
-                            div(class="col-auto") {
-                                ##
-                                do uie.dbSelect(sel_every)
-                                ##
-                            }
-                        }
-
-                        div(class="col-sm-2") {
-                            small(class="fw-bold"){"Durante:"}
-                            div(class="col-auto") {
-                                ##
-                                do uie.dbSelect(sel_for)
-                                ##
-                            }
-                        }
-
-                        div(class="col-sm-4") {
-                            small(class="fw-bold"){"Inicio:"}
-                            input(type="datetime-local" class="induxsoft-form-control mb-2" name="start" value="#<formatDateTime(@@(crontask, '$start'))>")
-                        }
-
-                        input(type="datetime-local" name="last_cycle" hidden="true")
-
-                        div(class="col-sm-4") {
-                            small(class="fw-bold"){"Expiración:"}
-                            input(type="datetime-local" class="induxsoft-form-control mb-2" name="finish" value="#<formatDateTime(@@(crontask, '$finish'))>")
-                        }
-
-                        div(class="col-sm-4") {
-                            small{"Tag:"}
-                            input(type="text" class="induxsoft-form-control mb-2" name="tag" value="#<@@(crontask, '$tag')>" maxlength="32")
-                        }
-
-                        div(class="col-sm-4 chbox-group") {
-                            input(type="checkbox" class="form-check-input induxsoft-corners" id="check_disabled" "#<ifstr(@@(crontask,'#disabled')==1,'checked','')>"="true")
-                            label(class="form-check-label" "for"="check_disabled")
-                            {"Desactivado"}
-                            input(type="hidden" name="disabled" id="ipt_disabled" value="#<@@(crontask,'#disabled')>")
                         }
                     }
                 }
