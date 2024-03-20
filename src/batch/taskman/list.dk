@@ -1,0 +1,60 @@
+#include "dkli.dkh"
+#!
+module "list"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "uielements.v12.dkl"
+    #include "../batch.config.dkl"
+
+    do @context.begin(@crud_context)
+    ref @http_context = @('&http')
+    ref get = @@(@http_context,"&request/get")
+    ref listJobsGroup = ifnull(@("&."),list.create())
+
+
+    new nav_config
+    {
+        @"title": "Administrador de de tareas"
+        member @"hidden"
+        {
+            @"print": @false
+        }
+        @"urlexit": "/"
+    }
+
+    #$
+    div(class="container p-0")
+    {
+        link(href="#<@CSS_BATCH>" rel="stylesheet"){""}
+
+        #! do uie.printV12FormBar(nav_config)
+        
+        #$ div(id="work_area" class="container-section pt-2")
+        {
+            p{$"#<@('$error/message')>"}
+
+            div(class="taskman-element")
+            {$""
+                #!
+                for i = 0; i < @count(listJobsGroup)
+                {
+                    ref jg=@item(listJobsGroup,i)
+                    #$
+                    div
+                    {
+                        a(class="taskman-item p-2 m-0 taskman-cursor h-100" href="#<replace(@BATCH_ADD_EDIT_TASKMAN,'{id}',@@(jg,'#sys_pk'))>")
+                        {
+                            div(class="")
+                            {
+                                h6(class="d-flex"){$"#<@@(jg,'$name')>"}
+                                small{"#<@@(jg,'$created')>"}
+                            }
+                        }
+                    }
+                    
+                }
+            }
+        }
+    }
+}

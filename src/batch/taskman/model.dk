@@ -1,0 +1,78 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "../batch.local.dkh"
+
+    @table_name="jobsgroup"   
+    @list_query="select *,date_format(sys_dtcreated,'%Y-%m-%d')created from jobsgroup limit 200"
+
+    
+    taskman.save::&db,&params,&data
+    {
+        ref  jg=dbr.rec(db,"select sys_pk,sys_guid from jobsgroup where sys_pk=@_entity_id",params)
+        if isnull(jg){do rise_error(500,"No se encontró datos del grupo indicado")}
+        base_path_jg=path.concat(@batch_base_path,@@(jg,"$sys_guid"))
+
+        ref @batchDB=db //inicializar la bd, para el uso de las funciones batch
+
+        if field.exist(params,"upload")
+        {
+            ref files=@@(@http_context,"&request/files")
+            for i = 0; i < @count(files)
+            {
+                ref f =list.obj(files,i)
+                filename=limpiarTexto(@@(f,"$filename"))
+                ext=file.extension(file.name(filename))
+                
+                if ext!=".dkl" && ext!=".dk" && ext!=".dkh"{do rise_error(500,"No se admite otros programas que no sean .dkl,.dk,.dkh")}
+
+                path_file=path.concat(base_path_jg,filename)
+                do file.copy(@@(f,"$temp_file"),path_file)
+            }
+        }
+        else if field.exist(params,"create")
+        {
+            name_program=limpiarTexto(@@(data,"$name_program"))
+            if file.extension(name_program)==""{name_program=name_program+".dkl"}
+
+            do batch.addTask(@@(jg,"$sys_guid"),name_program,@@(data,"$content_dkl"))
+        }
+        else if field.exist(params,"run")
+        {
+            if @@(params,"$_view")==""{do rise_error(500,"No se ha especificado el nombre del programa")}
+
+            new data_batch
+            {
+                @"jp_ref":@@(jg,"#sys_pk")
+                @"program":@@(params,"$_view")
+            }
+            if trim(@@(data,"$params"))!=""{data_batch<"params*">:from.json(@@(data,"$params"))}
+            
+            do batch.create(db,data_batch)
+        }
+    }
+    taskman.delete::&db,&params
+    {
+        ref  jg=dbr.rec(db,"select sys_guid from jobsgroup where sys_pk=@_entity_id",params)
+        if isnull(jg){do rise_error(500,"No se encontró datos del grupo indicado")}
+        
+       base_path_jg=path.concat(@batch_base_path,@@(jg,"$sys_guid"))
+       file=url_dcode(@@(params,"$file"))
+       path_file=path.concat(base_path_jg,file)
+
+       if not(file.exists(path_file)){do rise_error(500,"No se encontró el programa indicado")}
+
+        do batch.removeTask(@@(jg,"$sys_guid"),file)
+    }
+    
+    point @delete to taskman.delete
+    point @update to taskman.save
+
+    ref @create =@null
+
+    limpiarTexto::texto
+	{
+		return trim(replace(ranychars(texto,'$,/\n)("\'[]-%+/',' ')," ","_"))
+	}
+}

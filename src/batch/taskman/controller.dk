@@ -1,0 +1,6 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    if @@(params,"$_view")!=""{@form_view="detail_program.dk"}
+}

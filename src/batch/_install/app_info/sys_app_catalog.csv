@@ -1,3 +1,4 @@
 "pack_id","app_id","app_title","created","app_info"
 "batch","batch.crontask","Tareas programadas",2024-02-21T23:59:59,"Administración de tareas programadas"
 "batch","batch.jobsgroup","Grupos de tareas",2024-02-21T23:59:59,"Administración de grupos de tareas"
+"batch","batch.taskman","Administrador de tareas",2024-03-20T23:59:59,"Administrador de tareas"

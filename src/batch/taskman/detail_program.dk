@@ -1,0 +1,89 @@
+#include "dkli.dkh"
+#!
+
+module "form.dk"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "uielements.dkl"
+    #include "uielements.v12.dkl"
+    #include "../batch.config.dkl"
+    #include "../batch.local.dkh"
+
+    do @context.begin(@crud_context)
+    
+    ref jobsgroup = ifnull(@("&."),record.create())
+
+    entity_id = @("$parameters/_entity_id")
+    error = @("$error/message")
+    isNew = (entity_id == "_new")
+    program=@("$parameters/_view")
+    
+    ref files=batch.listTask(@@(jobsgroup,"$sys_guid"))
+    
+    for i = 0; i < @count(files)
+    {
+        f=list.str(files,i)
+        if file.justname(f)==program
+        {
+            program=file.name(f)
+            break
+        }
+    }
+    last_error=batch.last_error(@("&database"),@@(jobsgroup,"$sys_guid"),program)
+    #$
+    div(class="container p-0")
+    {
+        script(src="#<@JS_TASKMAN>"){""}
+        div(id="main_bar" class="row container-section my-2 px-0 py-2 border-bottom")
+        {
+            div(class="col-4 d-flex align-items-center p-0")
+            {
+                h5(class="text-no-break m-0"){"#<@@(jobsgroup,'$name')>"}
+            }
+
+            div(class="col-8 d-flex align-items-center justify-content-end p-0 gap-2")
+            {
+                a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar") 
+                {
+                    $"#<@@(@icons,'ARROW_CLOCKWISE')>"
+                }
+                a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action" href="#<replace(@BATCH_ADD_EDIT_TASKMAN,'{id}',@('$./sys_pk'))>" title="Salir") 
+                {
+                    $"#<@@(@icons,'X')>"
+                }
+            }
+        }
+        h5{"Programa: #<program>"}
+
+        h6{"Parámetros: "}
+        textarea(class="induxsoft-form-control" id="params" style="height:210px;" placeholder="{
+        clave:valor
+}
+        "){""}
+
+        button(class="btn btn-sm mt-2 border-secondary induxsoft-corners btn-main-action" onclick="taskman.runProgram();"){"Ejecutar programa"}
+
+        #! if last_error!=""
+        {
+            #$
+            hr{}
+            div
+            {
+                h6{"Último log: "}
+                small{"#<last_error>"}
+            }
+        }
+        
+
+        #$
+        script
+        {
+            $'
+            taskman.url="#<replace(@BATCH_DETAIL_PROG_TASKMAN,"{taskname}",program)>";
+            taskman._entity_id=#<@("#./sys_pk")>;
+            '
+        }
+    }
+}

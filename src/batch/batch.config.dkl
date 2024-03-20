@@ -1,23 +1,28 @@
 #include "dkli.dkh"
-
 #!
 module "config"
 {
 	// Valores de configuración locales al servidor
 
-	@batch_db="batch@MaxiComercio.R5" // Conexión a la base de datos de trabajos
+	@batch_db="_default_" // Conexión a la base de datos de trabajos
 	@batch_base_path="_tasks"    // Ruta relativa a los binarios de Devkron en donde se encuentran los programas
 	@batch_timeout=10
 	@wait_program=@false
 
 	// _STATIC
     @JS_CRONTASK = "/$/batch/js/crontask.js"
+    @JS_TASKMAN = "/$/batch/js/taskman.js"
+    @CSS_BATCH="/$/batch/css/batch.css"
     @JS_JOBSGROUP = "/$/batch/js/jobsgroup.js"
 
 	// _PACKAGE
 	@BATCH_JOBS_GROUP = "/!/batch/jobsgroup/"
     @BATCH_CRONTASK = "/!/batch/crontask/"
+    @BATCH_TASKMAN="/!/batch/taskman/"
 	
+    @BATCH_ADD_EDIT_TASKMAN="/!/batch/taskman/{id}/"
+    @BATCH_DETAIL_PROG_TASKMAN="/!/batch/taskman/{id}/{taskname}/"
+
 	@BATCH_ADD_EDIT_JOBS_GROUP = "/!/batch/jobsgroup/@id/"
     @BATCH_ADD_EDIT_CRONTASK = "/!/batch/crontask/@id/"
 

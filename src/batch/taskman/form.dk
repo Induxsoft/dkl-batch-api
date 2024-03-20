@@ -1,0 +1,105 @@
+#include "dkli.dkh"
+#!
+
+module "form.dk"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "uielements.dkl"
+    #include "uielements.v12.dkl"
+    #include "../batch.config.dkl"
+    #include "../batch.local.dkh"
+
+    do @context.begin(@crud_context)
+    
+    ref jobsgroup = ifnull(@("&."),record.create())
+
+    entity_id = @("$parameters/_entity_id")
+    error = @("$error/message")
+    isNew = (entity_id == "_new")
+
+    ref programs_jg=list.create()
+    ref programs=batch.listTask(@@(jobsgroup,"$sys_guid"))
+    for i = 0; i <@count(programs)
+    {
+        file=list.str(programs,i)
+        new data_file
+        {
+            @"name":file.name(file)
+            @"name_file":file.justname(file.name(file))
+            @"nameb64":url_encode(file.name(file))
+        }
+        do list.add(programs_jg,data_file)
+    }
+
+    url_delete=@BATCH_ADD_EDIT_TASKMAN+'?file=${DataRow.nameb64}'
+    url_detail=replace(replace(@BATCH_DETAIL_PROG_TASKMAN,"{id}",@("$./sys_pk")),"{taskname}","${DataRow.name_file}")
+
+    new table_definition
+    {
+        @"datatable*": programs_jg
+        @"table_footer": ""
+        member @"columns"
+        {
+            member @"name" { @"caption":"Programa" }
+            member @"_actions" 
+            { 
+                @"caption":"Acciones" 
+                @"template":ftext('
+                <div style="display:flex;gap:8px;justify-content: center;width:100%" class="no-print">
+                    <a class="btn " href=\'#<url_detail>\' style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem;text-decoration: none;">
+                        Detalle
+                    </a>
+                    <button
+                        onclick="InduxsoftCrudlModel.Delete('+@@(jobsgroup,'$sys_pk')+',\'#<url_delete>\') " style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"
+                    >
+                        Eliminar
+                    </button>
+                </div>')
+                @"no-print":@true
+            }
+        }
+    }
+    #$
+    div(class="container p-0")
+    {
+        #!
+        #include "taskman.modal.dk"
+        #$
+        script(src="#<@JS_TASKMAN>"){""}
+        div(id="main_bar" class="row container-section my-2 px-0 py-2 border-bottom")
+        {
+            div(class="col-4 d-flex align-items-center p-0")
+            {
+                h5(class="text-no-break m-0"){"#<@@(jobsgroup,'$name')>"}
+            }
+
+            div(class="col-8 d-flex align-items-center justify-content-end p-0 gap-2")
+            {
+                a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar") 
+                {
+                    $"#<@@(@icons,'ARROW_CLOCKWISE')>"
+                }
+                a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action" href="#<@BATCH_TASKMAN>" title="Salir") 
+                {
+                    $"#<@@(@icons,'X')>"
+                }
+            }
+        }
+        p{$"#<erorr>"}
+        input(type="file" class="d-none" name="file_program" id="file_program" accept=".dkl,.dk,.dkh")
+
+        label("for"="file_program" class="btn btn-sm m-1 induxsoft-corners border-secondary btn-main-action" onclick=""){"Subir programa"}
+        button(class="btn btn-sm m-1 induxsoft-corners border-secondary btn-main-action" onclick="taskman.showModal('mdl_create_program');"){"Crear programa"}
+
+        #! do uie.dbeditable(table_definition, "tbl_admin_jobsgroup")
+        #$
+        script
+        {
+            $'
+            taskman.url="#<@BATCH_ADD_EDIT_TASKMAN>";
+            taskman._entity_id=#<@("#./sys_pk")>;
+            '
+        }
+    }
+}

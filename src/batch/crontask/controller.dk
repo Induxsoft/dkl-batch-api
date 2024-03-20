@@ -1,0 +1,24 @@
+#include "dkli.dkh"
+#!
+
+module "controller"
+{
+    // http_method=toupper(@@(@http_context,"request/headers/request_method"))
+	// @expected_html=contains(tolower(replace(@@(@http_context,"request/headers/HTTP_ACCEPT")," ","")),"text/html")
+
+    /* if @expected_html
+	{
+		//Buscar archivos de vistas
+		@form_view=parse_view_file(@form_view)
+		if @form_view=="" { do rise_error(500,"Vista de formulario no disponible")}
+
+		@list_view=parse_view_file(@list_view)
+		if @list_view=="" { do rise_error(500,"Vista de lista no disponible")}
+
+		@error_view=parse_view_file(@error_view)
+		if @error_view=="" { do rise_error(500,"Vista de error no disponible")}
+
+		//Si el método es POST, pero se requiere HTML y no es una entidad nueva, entonces asumir que es PATCH
+		if @@(params,"_entity_id")!=@entity_id_blank && @@(params,"_entity_id")!="" && http_method=="POST" { http_method="PATCH" }
+	} */
+}

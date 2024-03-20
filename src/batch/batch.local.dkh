@@ -194,7 +194,7 @@ module "batch"
     {
         program=path.concat(@batch_base_path, @@(context,"job/group_id"))
         program=path.concat(program, @@(context,"job/program"))
-
+        
         if not(file.exists(program)) { return }
         
         do batch.updateStatus(@@(context,"job/group_id"),1)
@@ -436,8 +436,8 @@ module "batch"
     #!
     batch.addTask::groupidOrname,progname,dklcode
     {
-        ruta_programas = @batch_base_path + groupidOrname
-        ruta_nuevo_archivo = ruta_programas + "/" + progname
+        ruta_programas = path.concat(@batch_base_path,groupidOrname) 
+        ruta_nuevo_archivo = path.concat(ruta_programas, progname)
         
         do dir.ensure(ruta_programas)
         do file.wtext(ruta_nuevo_archivo, dklcode)
@@ -446,22 +446,45 @@ module "batch"
     #!
     batch.updateTask::groupidOrname,progname,dklcode
     {
-        ruta_archivo = @batch_base_path + groupidOrname + "/" + progname
+        ruta_programas = path.concat(@batch_base_path,groupidOrname) 
+        ruta_archivo = path.concat(ruta_programas, progname)
+        do dir.ensure(ruta_programas)
         do file.wtext(ruta_archivo, dklcode)
     }
 
     #!
     batch.removeTask::groupidOrname,progname
     {
-        ruta_archivo = @batch_base_path + groupidOrname + "/" + progname
+        ruta_programas = path.concat(@batch_base_path,groupidOrname) 
+        ruta_archivo = path.concat(ruta_programas, progname)
+        do dir.ensure(ruta_programas)
         do file.delete(ruta_archivo)
     }
 
     #!
     batch.listTask::groupidOrname
     {
-        ruta_carpeta = @batch_base_path + groupidOrname
-        return list.files(ruta_carpeta, "*.*")
+        ruta_programas = path.concat(@batch_base_path,groupidOrname)
+        do dir.ensure(ruta_programas)
+        return list.files(ruta_programas, "*.*")
+    }
+    #!
+    batch.last_error::&db,groupid,name_program
+    {
+        new params
+        {
+            @"jg":groupid
+            @"program":name_program
+        }
+        sql_p=ifstr(trim(name_program)!=""," and j.program=@program ","")
+        
+        sql="SELECT note FROM joblog jg
+        INNER JOIN job j ON jg.job_ref=j.sys_pk
+        INNER JOIN jobsgroup jgp ON j.jp_ref=jgp.sys_pk
+        WHERE jgp.sys_guid=@jg "+sql_p+"
+        ORDER BY jg.sys_pk DESC LIMIT 1"
+
+        return dbr.str(db,sql,params)
     }
 }
 

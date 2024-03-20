@@ -55,7 +55,7 @@ program
     
     program=path.concat(@batch_base_path, @@(context,"job/group_id"))
     program=path.concat(program, @@(context,"job/program"))
-
+    
     if not (file.exists(program)) { return }
     
     do runscript(program,"batch_context", context)
