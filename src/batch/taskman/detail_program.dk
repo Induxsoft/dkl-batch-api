@@ -59,7 +59,7 @@ module "form.dk"
 
         h6{"Parámetros: "}
         textarea(class="induxsoft-form-control" id="params" style="height:210px;" placeholder="{
-        clave:valor
+        \"clave\":\"valor\"
 }
         "){""}
 
