@@ -15,7 +15,7 @@ module "list"
     new table_definition
     {
         @"datatable*": listCrontask
-        @"table_footer": "Mostrando las primeras # tareas programadas ordenadas por ID."
+        @"table_footer": "Mostrando las primeras # tareas programadas ordenadas por nombre."
         member @"columns"
         {
             member @"id" { @"caption":"Nombre" }

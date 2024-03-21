@@ -20,12 +20,12 @@ module "form.dk"
 
     text jsonPrograms
     {$'[
-        {"id":0,"const":"Program 1"}
-        {"id":1,"const":"Program 2"}
-        {"id":2,"const":"Program 3"}
-        {"id":3,"const":"Program 4"}
+        {"id":"Program 1","const":"Program 1"}
+        {"id":"Program 2","const":"Program 2"}
+        {"id":"Program 3","const":"Program 3"}
+        {"id":"Program 4","const":"Program 4"}
     ]'}
-    
+
     text jsonFrequency
     {$'[
         {"id":0,"const":"0 - Una vez"}
@@ -73,16 +73,19 @@ module "form.dk"
         @"selected": @@(crontask,"$jobsgroup")
     }
 
-    new sel_programs
+    new sel_program
     {
         @"datatable*": listPrograms
-        @"id": "sel_programs"
+        @"id": "sel_program"
         new member "attributes"
         {
             @"class": "form-select rounded-0 mb-2"
+            @"name": "program"
+            @"required": "true"
         }
         @"value_field": "id"
         @"text_field": "const"
+        @"selected": @@(crontask,"$program")
     }
 
     new sel_frequency
@@ -133,23 +136,6 @@ module "form.dk"
         fecha = date_str(str2dt(date),"yyyy-MM-dd HH:mm:ss")
         
         return fecha
-    }
-
-    print_attachments::&list
-    {
-        for i = 0; i < list.count(list)
-        {
-            file_path = list.str(list,i)
-            file_name = file.name(file_path)
-            b64id = to.base64(file_name)
-            
-            #$ div(class="btn-group btn-group-sm" role="group" id="#<b64id>")
-            {
-                button(type="button" onclick="qa_issue.detail.downloadFile('#<file_name>')" class="btn btn-outline-secondary rounded-0" title="Descargar archivo"){$"#<file_name>"}
-                button(type="button" onclick="qa_issue.detail.deleteFile('#<file_name>')" class="btn btn-secondary rounded-0" title="Eliminar archivo"){$"#<@ICON_X_LG>"}
-            }
-        }
-        #!
     }
 
     #$
@@ -218,7 +204,7 @@ module "form.dk"
                                     small(class="fw-bold"){"Programa:"}
                                     div(class="col-auto") {
                                         ##
-                                        do uie.dbSelect(sel_programs)
+                                        do uie.dbSelect(sel_program)
                                         ##
                                     }
                                 }
@@ -257,7 +243,7 @@ module "form.dk"
 
                                 div(class="col-sm-4") {
                                     small(class="fw-bold"){"Inicio:"}
-                                    input(type="datetime-local" class="induxsoft-form-control mb-2" name="start" value="#<formatDateTime(@@(crontask, '$start'))>")
+                                    input(type="datetime-local" class="induxsoft-form-control mb-2" name="start" value="#<formatDateTime(@@(crontask, '$start'))>" required="true")
                                 }
 
                                 input(type="datetime-local" name="last_cycle" hidden="true")

@@ -84,10 +84,8 @@ module "model"
 
     function prepare_view(&db, &res)
     {
-        query = "SELECT sys_pk, id FROM crontask"
-        query2 = "SELECT sys_pk, name FROM jobsgroup"
-        res<"crontask*">: dbr.list(db, query, @null)
-        res<"jobsgroup*">: dbr.list(db, query2, @null)
+        query = "SELECT sys_pk, name FROM jobsgroup"
+        res<"jobsgroup*">: dbr.list(db, query, @null)
         return res
     }
 
