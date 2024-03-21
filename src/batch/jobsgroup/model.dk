@@ -27,9 +27,8 @@ module "model"
     {
         if (@@(data,"newPwd") == "true") {
             data<"apikey">: toupper(md5(@@(data,"apikey")))
+            do field.remove(data,"newPwd")
         }
-
-        do field.remove(data,"newPwd")
 
         ref res = entity.create(db, params, data)
 

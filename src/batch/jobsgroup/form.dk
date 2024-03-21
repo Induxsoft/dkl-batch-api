@@ -11,6 +11,7 @@ module "form.dk"
     do @context.begin(@crud_context)
     
     ref jobsgroup = ifnull(@("&."),record.create())
+    ref jobgroup = record.caseinsensitive(@("&./"))
 
     entity_id = @("$parameters/_entity_id")
     error = @("$error/message")
@@ -79,7 +80,6 @@ module "form.dk"
                         }
                         #! else {
                             #$ input(type="hidden" name="apikey" value="#<@@(jobsgroup, '$apikey')>" id="apikey")
-                            #$ input(type="hidden" name="newPwd" id="newPwd")
 
                             #$ div(class="col-sm-6 d-flex align-items-end mb-1")
                             {
@@ -104,6 +104,7 @@ module "form.dk"
                             h6(class="modal-title"){$"Cambiar contraseña"}
                             button(type="button" class="btn-close btn-sm" "data-bs-dismiss"="modal" "aria-label"="Close"){$""}
                         }
+
                         div(class="modal-body p-4 bg-white" id="mdl_cpwd_controls")
                         {
                             small{$"Nueva contraseña:"}
@@ -114,6 +115,7 @@ module "form.dk"
 
                             small(class="text-danger d-block" id="pwdMsg2"){$""}
                         }
+                        
                         div(class="modal-footer")
                         {
                             button(type="button" class="btn btn-sm btn-primary" onclick="jobsgroup.changePassword()"){$"Aceptar"}
@@ -125,5 +127,9 @@ module "form.dk"
         }
 
         script(src="#<@JS_JOBSGROUP>"){$""}
+        script{$'
+            jobsgroup.jobgroup = #<to.json(jobgroup)>
+            jobsgroup.url = "#<@BATCH_ADD_EDIT_JOBS_GROUP>"
+        '}
     }
 }

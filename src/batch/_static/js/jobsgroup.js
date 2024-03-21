@@ -1,5 +1,7 @@
 var jobsgroup =
 {
+    jobgroup: null, url:"",
+
     init()
     {
         const form = document.getElementById("form");
@@ -89,18 +91,30 @@ var jobsgroup =
 
     changePassword()
     {
-        const apikey = document.getElementById("apikey");
-        const newPwd = document.getElementById("newPwd");
-
         let values = this.getValues("mdl_cpwd_controls", true);
         if (values == null) return;
 
         if (this.validatePasswords(values.pwd, values.pwd_confirm)) {
-            apikey.value = values.pwd;
-            newPwd.value = "true";
+            let endpoint = this.url.replace('@id', this.jobgroup.sys_pk);
 
-            this.clearValues("mdl_cpwd_controls");
-            this.getBSModal("modal_change_pwd").hide();
+            let data = {
+                sys_pk: this.jobgroup.sys_pk,
+                sys_recver: this.jobgroup.sys_recver,
+                name: this.jobgroup.name,
+                apikey: values.pwd,
+                newPwd: "true",
+            }
+
+            InduxsoftCrudlModel.InvokeService(endpoint, data, 
+                success => {
+                    alert("Contraseña cambiada con éxito.");
+                    this.clearValues("mdl_cpwd_controls");
+                    this.getBSModal("modal_change_pwd").hide();
+                    this.changeSysRecver(success);
+                },
+                failure => { alert('No fue posible cambiar la contraseña\n' + JSON.stringify(failure)) },
+                'PUT', false
+            );
         }
     },
 
@@ -113,6 +127,12 @@ var jobsgroup =
             if (pwdMsg) pwdMsg.textContent = "";
             return true;
         }
+    },
+
+    changeSysRecver(jgData)
+    {
+        const iptRecver = document.querySelector('#form input[name="sys_recver"]');
+        if (iptRecver) iptRecver.value = jgData.sys_recver;
     }
 }
 
