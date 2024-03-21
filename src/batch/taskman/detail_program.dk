@@ -20,7 +20,7 @@ module "form.dk"
     isNew = (entity_id == "_new")
     program=@("$parameters/_view")
     
-    ref files=batch.listTask(@@(jobsgroup,"$sys_guid"))
+    ref files=batch.list_programs(@@(jobsgroup,"$sys_guid"))
     
     for i = 0; i < @count(files)
     {
@@ -72,7 +72,7 @@ module "form.dk"
             div
             {
                 h6{"Último log: "}
-                small{"#<last_error>"}
+                small(style="white-space: break-spaces;"){"#<last_error>"}
             }
         }
         
