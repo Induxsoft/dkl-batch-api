@@ -32,7 +32,7 @@ module "modals"
                     placeholder="{
     \"nombre_parámetro\":
      {
-        \"control\":\"text/intcolor/hexcolor/date/datetime/time/select/textarea\",
+        \"control\":\"text/intcolor/hexcolor/date/datetime/time/select/textarea/file\",
         \"source\":
         {
             \"type\":\"list/query\",
