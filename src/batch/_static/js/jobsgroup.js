@@ -121,7 +121,7 @@ var jobsgroup =
     validatePasswords(pwd1,pwd2,pwdMsg)
     {
         if (pwd1 != pwd2) {
-            if (pwdMsg) pwdMsg.textContent = "La contraseñas no coinciden.";
+            if (pwdMsg) pwdMsg.textContent = "Las contraseñas no coinciden.";
             return false;
         } else if (!(pwd1 == "" || pwd2 == "")) {
             if (pwdMsg) pwdMsg.textContent = "";
