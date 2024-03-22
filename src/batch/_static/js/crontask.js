@@ -36,10 +36,22 @@ var crontask =
         const ipt_disabled = document.querySelector('#ipt_disabled');
 
         if (check_disabled && ipt_disabled) check_disabled.addEventListener('change', () => { this.set_input_check_value(ipt_disabled, check_disabled) });
+
+        this.trigger(sel_jobsgroup,"change");
+    },
+
+    trigger(element,eventName)
+    {
+        if (!element) return;
+        
+        let event = new Event(eventName);
+        element.dispatchEvent(event);
     },
 
     change_program(jobgroup,sel_program)
     {
+        if (!jobgroup.value) return;
+
         InduxsoftCrudlModel.InvokeService("./?idGroup="+jobgroup.value, null,
             success => {
                 let options = success.map(program => `<option value=${program}>${program}</option>`).join('/n');

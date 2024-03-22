@@ -98,7 +98,7 @@ module "form.dk"
     new sel_for
     {
         @"datatable*": listFor
-        @"id": "sel_frequency"
+        @"id": "sel_for"
         new member "attributes"
         {
             @"class": "form-select rounded-0 mb-2"
