@@ -84,7 +84,7 @@ var taskman=
             },
         "PATCH", false);
     },
-    runProgram()
+    async runProgram()
     {
         const _program_params = document.getElementById("_program_params");
         let params = "";
@@ -93,20 +93,54 @@ var taskman=
         {
             if (!_program_params.reportValidity()) return;
 
-            let formData = {}
+            let frmFiles = new FormData();
+            let fileCount = 0;
+            let fd = {};
             let fields = _program_params.elements;
 
             for (let i = 0; i < fields.length; i++) {
-                const f = fields[i];
-                if (f.name !== "")
-                    formData[f.name] = f.value;
+                const el = fields[i];
+                if (el.name === "") continue;
+                
+                if (el.type === "file" && el.files.length > 0)
+                {
+                    const file = el.files[0];
+                    frmFiles.append(el.name, file);
+                    fileCount++
+                }
+                else fd[el.name] = el.value;
+            }
+            
+            if (fileCount > 0) {
+                let url = taskman.url.replace("{id}",taskman._entity_id)+"?upload=program-files";
+
+                try {
+                    const response = await fetch(url,{
+                        method: "PATCH",
+                        body: frmFiles
+                    });
+                    if (!response.ok) { alert('Hubo un problema con la solicitud: ' + response.status); return; }
+                    const data = await response.json();
+                    
+                    Object.entries(data).forEach(entry => {
+                        const [key,value] = entry;
+                        fd[key] = value;
+                    });
+                } catch (error) {
+                    console.error('Se produjo un error al realizar la solicitud:', error);
+                }
+                
+                /* InduxsoftCrudlModel.InvokeService(url, frmFiles,
+                    (data) => { console.log(data); },
+                    (error) => { alert(error.message ?? JSON.stringify(error)); },
+                "PATCH", false, true, "", true); */
             }
 
-            params = JSON.stringify(formData);
+            params = JSON.stringify(fd);
         }
         else
         {
-            if (_program_params && _program_params.value.trim() != "")
+            if (_program_params.value.trim() != "")
             {
                 try 
                 {

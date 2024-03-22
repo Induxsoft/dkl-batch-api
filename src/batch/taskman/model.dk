@@ -17,6 +17,55 @@ module ""
         }
         return @false
     }
+
+    taskman.upload::&db,&params,&data
+    {
+        ref files = @@(@http_context,"&request/files")
+
+        switch @@(params,"$upload")
+        {
+            case "program-files"
+            {
+                do dir.ensure("_upload/")
+                ref uploaded = record.create()
+
+                for i = 0; i < list.count(files)
+                {
+                    ref file = list.obj(files,i)
+
+                    fname = limpiarTexto(trim(@@(file,"$filename")))
+                    field = @@(file,"$field")
+                    fname = uuid() + file.extension(file.name(fname))
+                    fpath = path.concat("_upload",fname)
+
+                    do file.copy(@@(file,"$temp_file"), fpath)
+                    uploaded<field> : fpath
+                }
+
+                return uploaded
+            }
+            default
+            {
+                for i = 0; i < @count(files)
+                {
+                    ref f =list.obj(files,i)
+                    filename=limpiarTexto(@@(f,"$filename"))
+                    ext=file.extension(file.name(filename))
+                    
+                    if ext==".json" 
+                    {
+                        if not(taskman.exist.file(@@(jg,"$sys_guid"),filename)){do rise_error(500,"Debe subir primero un archivo dkl o dk con el mismo nombre del archivo .json ")} 
+                    }
+                    else if ext!=".dkl" && ext!=".dk" {do rise_error(500,"No se admite otros programas que no sean .dkl,.dk,.dkh")}
+
+                    path_file=path.concat(base_path_jg,filename)
+                    do file.copy(@@(f,"$temp_file"),path_file)
+                }
+                break
+            }
+        }
+    }
+
     taskman.save::&db,&params,&data
     {
         ref  jg=dbr.rec(db,"select sys_pk,sys_guid from jobsgroup where sys_pk=@_entity_id",params)
@@ -27,22 +76,7 @@ module ""
 
         if field.exist(params,"upload")
         {
-            ref files=@@(@http_context,"&request/files")
-            for i = 0; i < @count(files)
-            {
-                ref f =list.obj(files,i)
-                filename=limpiarTexto(@@(f,"$filename"))
-                ext=file.extension(file.name(filename))
-                
-                if ext==".json" 
-                {
-                  if not(taskman.exist.file(@@(jg,"$sys_guid"),filename)){do rise_error(500,"Debe subir primero un archivo dkl o dk con el mismo nombre del archivo .json ")} 
-                }
-                else if ext!=".dkl" && ext!=".dk" {do rise_error(500,"No se admite otros programas que no sean .dkl,.dk,.dkh")}
-
-                path_file=path.concat(base_path_jg,filename)
-                do file.copy(@@(f,"$temp_file"),path_file)
-            }
+            return taskman.upload(db,params,data)
         }
         else if field.exist(params,"create")
         {
@@ -70,6 +104,7 @@ module ""
             do batch.create(db,data_batch)
         }
     }
+
     taskman.delete::&db,&params
     {
         ref  jg=dbr.rec(db,"select sys_guid from jobsgroup where sys_pk=@_entity_id",params)
