@@ -39,6 +39,10 @@ program "cron"
         ref nm=_invoke(datetime,"dtadmonths", m)
         return nm
     }
+    /**
+    * Indica si esta instancia es anterior, igual o posterior al valor DateTime especificado.
+    * @return int
+    */
     compareTo::&datetime1,&datetime2
     {
         n=_invoke(datetime1,"dtCompare",datetime2)
@@ -132,10 +136,14 @@ program "cron"
 
         sql_las_cycle_start="@next_time"
 
-        if not(isnull(finish)) && ( compareTo(next_time,finish) > 0  || compareTo(next_time,addMinutes(last_cycle,@@(task,"#for"))) > 0 || compareTo(next_time,last_cycle ) < 0 )
-        {
-            return
-        }
+        // Siguiente momento > expiración
+        condition1 = (compareTo(next_time,finish) > 0)
+        // Siguiente momento > últ. ejecución + durante (minutos)
+        condition2 = (compareTo(next_time,addMinutes(last_cycle,@@(task,"#for"))) > 0)
+        // Siguiente momento < últ. ejecución && no es indefinido.
+        condition3 = (compareTo(next_time,last_cycle) < 0 && (@@(task,"#for") != @for_indefinido))
+
+        if not(isnull(finish)) && (condition1 || condition2 || condition3) { return }
 
         do dbr.execute(db,"insert into crontask_log (sys_guid,
                         sys_dtcreated,
@@ -243,7 +251,6 @@ program "cron"
     while @true
     {
         ref tasks=dbr.list(db,sql_tasks,params)
-        do print("Ejecutando.....")
         
         for i = 0; i < @count(tasks)
         {
