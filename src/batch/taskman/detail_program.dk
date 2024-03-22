@@ -1,6 +1,6 @@
 #include "dkli.dkh"
+#pattern function "function '$name' ()"
 #!
-
 module "form.dk"
 {
     #include "functions.dkh"
@@ -18,7 +18,7 @@ module "form.dk"
     entity_id = @("$parameters/_entity_id")
     error = @("$error/message")
     isNew = (entity_id == "_new")
-    program=@("$parameters/_view")
+    program = @("$parameters/_view")
     
     ref files=batch.list_programs(@@(jobsgroup,"$sys_guid"))
     
@@ -31,7 +31,131 @@ module "form.dk"
             break
         }
     }
+
+    def_ctrl_params_path = path.concat(@batch_base_path, @@(jobsgroup,"$sys_guid"))
+    def_ctrl_params_path = path.concat(def_ctrl_params_path, @("$parameters/_view") + ".json")
+
     last_error=batch.last_error(@("&database"),@@(jobsgroup,"$sys_guid"),program)
+
+    function generateHtmlControls(json_def_path)
+    {
+        ref definition = from.json(file.rtext(json_def_path))
+
+        go foreach.fobj(key:ctrlName, value:ctrlDef) with(definition)
+        {
+            control = tolower(trim(@@(ctrlDef,"$control")))
+            caption = trim(@@(ctrlDef,"$caption"))
+            if caption == ""
+            {
+                caption = ranychars(tolower(trim(ctrlName)), "-_.:;/\\", " ")
+                first_character = toupper(lremove(caption,1))
+                caption = first_character + left(caption,1)
+            }
+            required = trim(@@(ctrlDef,"$required"))
+            required = ifstr(parse.bool(required), "required", "")
+
+            switch control
+            {
+                case "date"
+                {
+                    #$
+                    label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
+                    input(class="form-control rounded-0" type="date" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    #!
+                }
+                case "time"
+                {
+                    #$
+                    label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
+                    input(class="form-control rounded-0" type="time" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    #!
+                }
+                case "datetime"
+                {
+                    #$
+                    label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
+                    input(class="form-control rounded-0" type="datetime-local" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    #!
+                }
+                case "hexcolor"
+                {
+                    #$
+                    label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
+                    input(class="form-control form-control-color rounded-0" type="color" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    #!
+                    break
+                }
+                case "textarea"
+                {
+                    #$
+                    label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
+                    textarea(class="form-control rounded-0" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"=""){$""}
+                    #!
+                    break
+                }
+                case "number"
+                {
+                    #$
+                    label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
+                    input(class="form-control rounded-0" type="number" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    #!
+                    break
+                }
+                case "file"
+                {
+                    #$
+                    label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
+                    input(class="form-control rounded-0" type="file" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    #!
+                    break
+                }
+                case "select"
+                {
+                    _type = @@(ctrlDef,"$source/type")
+                    _query = @@(ctrlDef,"$source/query")
+                    _showfield = @@(ctrlDef,"$source/showfield")
+                    _keyfield = @@(ctrlDef,"$source/keyfield")
+                    ref _values = ifnull(@@(ctrlDef,"&source/values"),list.create())
+
+                    if _type == "query"
+                    {
+                        ref _values = dbr.list(@("&database"), _query, @null)
+                    }
+
+                    new select_def
+                    {
+                        @"datatable*": _values
+                        @"id": "sel_" + ctrlName
+                        new member "attributes"
+                        {
+                            @"name": ctrlName
+                            @"class": "form-select rounded-0"
+                        }
+                        @"value_field": _keyfield
+                        @"text_field": _showfield
+                    }
+
+                    if required != "" { select_def<"attributes/required"> : "true" }
+
+                    #$
+                    label(class="form-label" "for"="sel_#<ctrlName>"){$"#<caption>"}
+                    #!
+                    do uie.dbSelect(select_def)
+                    #!
+                    break
+                }
+                default
+                {
+                    #$
+                    label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
+                    input(class="form-control rounded-0" type="text" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    #!
+                    break
+                }
+            }
+        }
+    }
+
     #$
     div(class="container p-0")
     {
@@ -55,13 +179,32 @@ module "form.dk"
                 }
             }
         }
+
         h5{"Programa: #<program>"}
 
         h6{"Parámetros: "}
-        textarea(class="induxsoft-form-control" id="params" style="height:210px;" placeholder="{
-        \"clave\":\"valor\"
-}
-        "){""}
+        
+        #!
+        if file.exists(def_ctrl_params_path)
+        {
+            #$
+            form(class="border p-2" id="_program_params")
+            {
+                $""
+                #! do generateHtmlControls(def_ctrl_params_path)
+            }
+        }
+        else
+        {
+            #$
+            textarea(
+                class="induxsoft-form-control"
+                id="_program_params"
+                rows="10"
+                placeholder="{\r\n\t\"clave\":\"valor\"\r\n}"
+            ){$""}
+        }
+        #$
 
         button(class="btn btn-sm mt-2 border-secondary induxsoft-corners btn-main-action" onclick="taskman.runProgram();"){"Ejecutar programa"}
 
@@ -72,10 +215,9 @@ module "form.dk"
             div
             {
                 h6{"Último log: "}
-                small(style="white-space: break-spaces;"){"#<last_error>"}
+                small(style="white-space: break-spaces;"){$"#<last_error>"}
             }
         }
-        
 
         #$
         script

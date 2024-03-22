@@ -56,11 +56,11 @@ program
     program=path.concat(@batch_base_path, @@(context,"job/group_id"))
     program=path.concat(program, @@(context,"job/program"))
     
-    if not (file.exists(program)) 
-	{
-		do batch.saveLog(@@(context,"$job/id"),"Programa no encontrado.")
-		return 
-	}
+    if not(file.exists(program))
+    {
+        do batch.saveLog(@@(context,"$job/id"),"Programa no encontrado.")
+        return
+    }
     
     do runscript(program,"batch_context", context)
 
@@ -72,5 +72,4 @@ program
         do batch.finishedWithErrors(db,error,context)
         do rise_error(00,error)
     }
-
 }
