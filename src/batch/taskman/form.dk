@@ -81,7 +81,7 @@ module "form.dk"
                 {
                     $"#<@@(@icons,'ARROW_CLOCKWISE')>"
                 }
-                a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action" href="#<@BATCH_TASKMAN>" title="Salir") 
+                a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action" href="#<@BATCH_JOBS_GROUP>" title="Salir") 
                 {
                     $"#<@@(@icons,'X')>"
                 }
