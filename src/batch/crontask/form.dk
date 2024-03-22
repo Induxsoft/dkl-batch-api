@@ -14,21 +14,6 @@ module "form.dk"
     ref crontask = ifnull(@("&."),record.create())
     ref listJobsgroup = @("&./jobsgroup")
 
-    ref programs = batch.list_programs("d00de59d5a62477b8e869379d96365d0")
-    ref programs_jg = list.create()
-
-    for i = 0; i <@count(programs)
-    {
-        file = list.str(programs,i)
-        new data_file
-        {
-            @"name": file.name(file)
-            @"name_file": file.justname(file.name(file))
-            @"nameb64": url_encode(file.name(file))
-        }
-        do list.add(programs_jg,data_file)
-    }
-
     entity_id = @("$parameters/_entity_id")
     error = @("$error/message")
     isNew = (entity_id == "_new")
@@ -79,21 +64,6 @@ module "form.dk"
         @"text_field": "name"
         @"selected": @@(crontask,"$jobsgroup")
     }
-
-    /* new sel_program
-    {
-        @"datatable*": programs_jg
-        @"id": "sel_program"
-        new member "attributes"
-        {
-            @"class": "form-select rounded-0 mb-2"
-            @"name": "program"
-            @"required": "true"
-        }
-        @"value_field": "name"
-        @"text_field": "name"
-        @"selected": @@(crontask,"$program")
-    } */
 
     new sel_frequency
     {
@@ -214,7 +184,7 @@ module "form.dk"
 
                                 div(class="col-sm-4") {
                                     small{"Nombre:"}
-                                    input(type="text" class="induxsoft-form-control mb-2" name="id" value="#<@@(crontask, '$id')>" required="true" maxlength="32")
+                                    input(type="text" class="induxsoft-form-control mb-2" name="id" value="#<@@(crontask, '$id')>" required="true" maxlength="32" id="nombre")
                                 }
 
                                 div(class="col-sm-4") {
@@ -291,8 +261,5 @@ module "form.dk"
         '}
 
         script(src="#<@JS_CRONTASK>"){$""}
-        script{$'
-            crontask.url = "#<BATCH_ADD_EDIT_CRONTASK>"
-        '}
     }
 }

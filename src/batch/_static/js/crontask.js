@@ -1,14 +1,19 @@
 var crontask =
 {
-    crontask: null, url: "",
-
     init()
     {
         const sel_jobsgroup = document.getElementById("sel_jobsgroup");
         const sel_program = document.getElementById("sel_program");
+        const nombre = document.getElementById("nombre")
 
         sel_jobsgroup.addEventListener("change", () => {
             this.change_program(sel_jobsgroup,sel_program);
+        })
+
+        sel_program.addEventListener("change", () => {
+            if (sel_program.value != "") {
+                nombre.value = sel_program.value
+            }
         })
 
         const check_disabled = document.querySelector('#check_disabled');
@@ -22,7 +27,6 @@ var crontask =
         InduxsoftCrudlModel.InvokeService("./?idGroup="+jobgroup.value, null,
             success => {
                 let options = success.map(program => `<option value=${program}>${program}</option>`).join('/n');
-
                 sel_program.innerHTML = options;
             },
             failure => {
