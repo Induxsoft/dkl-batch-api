@@ -86,33 +86,47 @@ var taskman=
     },
     runProgram()
     {
-        var element_params=document.getElementById("params");
+        const _program_params = document.getElementById("_program_params");
+        let params = "";
 
-        var params="";
-        if(element_params && element_params.value.trim()!="")
+        if (_program_params.tagName.toLowerCase() === "form")
         {
-            params=element_params.value.trim();
-            try 
+            if (!_program_params.reportValidity()) return;
+
+            let formData = {}
+            let fields = _program_params.elements;
+
+            for (let i = 0; i < fields.length; i++) {
+                const f = fields[i];
+                if (f.name !== "")
+                    formData[f.name] = f.value;
+            }
+
+            params = JSON.stringify(formData);
+        }
+        else
+        {
+            if (_program_params && _program_params.value.trim() != "")
             {
-                JSON.parse(params);
-            } catch (error) 
-            {
-                alert(error);
-                element_params.focus();
-                return;
+                try 
+                {
+                    params = _program_params.value.trim();
+                    JSON.parse(params);
+                } catch (error) 
+                {
+                    alert(error);
+                    _program_params.focus();
+                    return;
+                }
             }
         }
-        var data=
-        {
-            params:params
-        }
-        InduxsoftCrudlModel.InvokeService(taskman.url.replace("{id}",taskman._entity_id)+"?run=1", data,
-            (data) => 
-            { window.location.reload(); },
-            (error) => 
-            {
-                alert(error.message ?? JSON.stringify(error)); 
-            },
+
+        let endpoint = taskman.url.replace("{id}",taskman._entity_id)+"?run=1";
+        let data = { params: params }
+
+        InduxsoftCrudlModel.InvokeService(endpoint, data,
+            (data) => { window.location.reload(); },
+            (error) => { alert(error.message ?? JSON.stringify(error)); },
         "PATCH", false);
     },
     showModal(modalId='')
