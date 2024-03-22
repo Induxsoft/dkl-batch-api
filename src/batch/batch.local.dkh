@@ -195,7 +195,11 @@ module "batch"
         program=path.concat(@batch_base_path, @@(context,"job/group_id"))
         program=path.concat(program, @@(context,"job/program"))
         
-        if not(file.exists(program)) { return }
+        if not(file.exists(program)) 
+		{ 
+			do batch.saveLog(@@(context,"$job/id"),"Programa no encontrado.")
+			return 
+		}
         
         do batch.updateStatus(@@(context,"job/group_id"),1)
 
@@ -486,7 +490,7 @@ module "batch"
         }
         sql_p=ifstr(trim(name_program)!=""," and j.program=@program ","")
         
-        sql="SELECT note FROM joblog jg
+        sql="SELECT concat('ID del trabajo: ',j.sys_guid,'\r\n',note) FROM joblog jg
         INNER JOIN job j ON jg.job_ref=j.sys_pk
         INNER JOIN jobsgroup jgp ON j.jp_ref=jgp.sys_pk
         WHERE jgp.sys_guid=@jg "+sql_p+"
