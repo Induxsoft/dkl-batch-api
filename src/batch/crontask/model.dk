@@ -5,7 +5,7 @@ module "model"
 {
     @table_name = "crontask"
     @list_query = "
-        SELECT ct.sys_pk, ct.id, ct.tag, jg.name AS jobsgroup, ct.program, ct.params, ct.frequency, ct.every, ct.for, ct.start, ct.last_cycle, ct.finish, ct.disabled
+        SELECT ct.sys_pk, ct.id, ct.tag, jg.name AS jobsgroup, ct.program, ct.params, ct.frequency, ct.every, ct.for, DATE_FORMAT(ct.start,'%Y-%m-%d %H:%i:%s') as start, ct.last_cycle, DATE_FORMAT(ct.finish,'%Y-%m-%d %H:%i:%s') as finish, ct.disabled
         FROM crontask AS ct
         INNER JOIN jobsgroup AS jg ON ct.jobsgroup = jg.sys_pk
         WHERE IF(IFNULL(@s,'')='', true, (ct.id LIKE CONCAT('%',@s,'%') OR ct.tag LIKE CONCAT('%',@s,'%'))) AND IFNULL(ct.sys_deleted,0) = 0 ORDER BY ct.id
