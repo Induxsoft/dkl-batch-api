@@ -1,10 +1,26 @@
 var crontask =
 {
+    currentGroup: "", currentProgram: "",
+
     init()
     {
         const sel_jobsgroup = document.getElementById("sel_jobsgroup");
         const sel_program = document.getElementById("sel_program");
         const nombre = document.getElementById("nombre")
+
+        if (this.currentGroup != "") {
+            InduxsoftCrudlModel.InvokeService("./?idGroup="+this.currentGroup, null,
+                success => {
+                    let options = success.map(program => `<option value=${program}>${program}</option>`).join('/n');
+                    sel_program.innerHTML = options;
+                    sel_program.value = this.currentProgram;
+                },
+                failure => {
+                    alert('Failure \n' + JSON.stringify(failure))
+                },
+                'GET', false
+            );
+        }
 
         sel_jobsgroup.addEventListener("change", () => {
             this.change_program(sel_jobsgroup,sel_program);

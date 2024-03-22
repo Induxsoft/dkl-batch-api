@@ -31,7 +31,15 @@ module "model"
         exception 
         {
             do prepare_view(db, data)
-            do rise_error(0, last_error())
+
+            code = last_error_code()
+            error = last_error()
+
+            if contains(error,"Duplicate entry") {
+                error = "Entrada duplicada, ya existe una tarea registrada con ese nombre."
+            }
+
+            do rise_error(code,error)
         }
     }
 
@@ -116,7 +124,7 @@ module "model"
     function prepare_view(&db, &res)
     {
         query = "SELECT sys_pk, name FROM jobsgroup"
-        res<"jobsgroup*">: dbr.list(db, query, @null)
+        res<"listJobsgroup*">: dbr.list(db, query, @null)
         return res
     }
 

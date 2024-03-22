@@ -12,7 +12,9 @@ module "form.dk"
     do @context.begin(@crud_context)
     
     ref crontask = ifnull(@("&."),record.create())
-    ref listJobsgroup = @("&./jobsgroup")
+    ref listJobsgroup = @("&./listJobsgroup")
+    currentGroup = @@(crontask,'$jobsgroup')
+    currentProgram = @@(crontask,'$program')
 
     entity_id = @("$parameters/_entity_id")
     error = @("$error/message")
@@ -179,11 +181,11 @@ module "form.dk"
 
                                 div(class="col-sm-4") {
                                     small(class="fw-bold"){"Programa:"}
-                                    select(class="form-select rounded-0 mb-2" name="program" id="sel_program" required="true"){$""}
+                                    select(class="form-select rounded-0 mb-2" name="program" required="true" id="sel_program"){$""}
                                 }
 
                                 div(class="col-sm-4") {
-                                    small{"Nombre:"}
+                                    small(class="fw-bold"){"Nombre:"}
                                     input(type="text" class="induxsoft-form-control mb-2" name="id" value="#<@@(crontask, '$id')>" required="true" maxlength="32" id="nombre")
                                 }
 
@@ -261,5 +263,10 @@ module "form.dk"
         '}
 
         script(src="#<@JS_CRONTASK>"){$""}
+
+        script{$'
+            crontask.currentGroup = "#<currentGroup>"
+            crontask.currentProgram = "#<currentProgram>"
+        '}
     }
 }
