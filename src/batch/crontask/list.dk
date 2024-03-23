@@ -26,8 +26,8 @@ module "list"
             member @"frequency" { @"caption": "Frecuencia "}
             member @"every" { @"caption": "Repetir cada" }
             member @"for" { @"caption": "Durante" }
-            member @"start" { @"caption": "Inicio" }
-            member @"finish" { @"caption": "Expiración" }
+            member @"last_cycle" { @"caption": "Últ. ejecución" }
+            member @"next_time" { @"caption": "Prox. ejecución" }
             member @"disabled" { @"caption": "Desactivado" }
             member @"_actions" 
             { 
