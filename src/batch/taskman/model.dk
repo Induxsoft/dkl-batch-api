@@ -18,6 +18,48 @@ module ""
         return @false
     }
 
+    taskman.read::&db,&params
+    {
+        switch @@(params,"$_act")
+        {
+            case "get-program-status"
+            {
+                new p
+                {
+                    @"jobgroup": @@(params,"$_entity_id")
+                    @"program": @@(params,"$_view")
+                }
+                sql_program = "
+                SELECT
+                    sys_pk,
+                    sys_guid,
+                    jp_ref,
+                    program,
+                    jstatus AS `status`,
+                    CASE jstatus
+                        WHEN 0 THEN 'Solicitado'
+                        WHEN 1 THEN 'En proceso'
+                        WHEN 2 THEN 'Pausado'
+                        WHEN 3 THEN 'Terminado'
+                        WHEN 4 THEN 'Terminado (con errores)'
+                        WHEN 99 THEN 'Cancelado'
+                        ELSE 'Indeterminado'
+                    END status_text
+                FROM job 
+                WHERE jp_ref = @jobgroup
+                    AND program = @program
+                ORDER BY sys_dtcreated DESC
+                LIMIT 1
+                "
+                return dbr.rec(db,sql_program,p)
+            }
+            default
+            {
+                return entity.read(db,params)
+            }
+        }
+    }
+
     taskman.upload::&db,&params,&data
     {
         ref files = @@(@http_context,"&request/files")
@@ -101,7 +143,7 @@ module ""
             }
             if trim(@@(data,"$params"))!=""{data_batch<"params*">:from.json(@@(data,"$params"))}
             
-            do batch.create(db,data_batch)
+            return batch.create(db,data_batch)
         }
     }
 
@@ -121,6 +163,7 @@ module ""
     
     point @delete to taskman.delete
     point @update to taskman.save
+    point @read to taskman.read
 
     ref @create =@null
 

@@ -12,6 +12,7 @@ module "form.dk"
     #include "../batch.local.dkh"
 
     do @context.begin(@crud_context)
+    ref db:@("&database")
     
     ref jobsgroup = ifnull(@("&."),record.create())
 
@@ -21,7 +22,6 @@ module "form.dk"
     program = @("$parameters/_view")
     
     ref files=batch.list_programs(@@(jobsgroup,"$sys_guid"))
-    
     for i = 0; i < @count(files)
     {
         f=list.str(files,i)
@@ -31,13 +31,48 @@ module "form.dk"
             break
         }
     }
+    last_error=batch.last_error(db,@@(jobsgroup,"$sys_guid"),program)
 
+    new p
+    {
+        @"jobgroup": entity_id
+        @"program": program
+    }
+    sql_program = "
+    SELECT
+        sys_pk,
+        sys_guid,
+        jp_ref,
+        program,
+        jstatus AS `status`,
+        CASE jstatus
+            WHEN 0 THEN 'Solicitado'
+            WHEN 1 THEN 'En proceso'
+            WHEN 2 THEN 'Pausado'
+            WHEN 3 THEN 'Terminado'
+            WHEN 4 THEN 'Terminado (con errores)'
+            WHEN 99 THEN 'Cancelado'
+            ELSE 'Indeterminado'
+        END status_text
+    FROM job 
+    WHERE jp_ref = @jobgroup
+        AND program = @program
+    ORDER BY sys_dtcreated DESC
+    LIMIT 1
+    "
+    ref dtProgram = dbr.rec(db,sql_program,p)
+
+    program_token = @@(dtProgram,"$sys_guid")
+    program_status = @@(dtProgram,"#status")
+    program_st_text = @@(dtProgram,"$status_text")
+    show_spinner = (program_status < 3)
+    show_st_text = (program_status < 3)
+    @enable_controls = (isnull(dtProgram) || program_status >= 3)
+    
     def_ctrl_params_path = path.concat(@batch_base_path, @@(jobsgroup,"$sys_guid"))
     def_ctrl_params_path = path.concat(def_ctrl_params_path, @("$parameters/_view") + ".json")
 
-    last_error=batch.last_error(@("&database"),@@(jobsgroup,"$sys_guid"),program)
-
-    function generateHtmlControls(json_def_path)
+    function generateHtmlControls(&db,json_def_path)
     {
         ref definition = from.json(file.rtext(json_def_path))
 
@@ -60,28 +95,28 @@ module "form.dk"
                 {
                     #$
                     label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
-                    input(class="form-control rounded-0" type="date" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    input(class="form-control rounded-0" type="date" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="" "#<ifstr(@enable_controls,'','disabled')>"="")
                     #!
                 }
                 case "time"
                 {
                     #$
                     label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
-                    input(class="form-control rounded-0" type="time" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    input(class="form-control rounded-0" type="time" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="" "#<ifstr(@enable_controls,'','disabled')>"="")
                     #!
                 }
                 case "datetime"
                 {
                     #$
                     label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
-                    input(class="form-control rounded-0" type="datetime-local" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    input(class="form-control rounded-0" type="datetime-local" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="" "#<ifstr(@enable_controls,'','disabled')>"="")
                     #!
                 }
                 case "hexcolor"
                 {
                     #$
                     label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
-                    input(class="form-control form-control-color rounded-0" type="color" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    input(class="form-control form-control-color rounded-0" type="color" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="" "#<ifstr(@enable_controls,'','disabled')>"="")
                     #!
                     break
                 }
@@ -89,7 +124,7 @@ module "form.dk"
                 {
                     #$
                     label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
-                    textarea(class="form-control rounded-0" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"=""){$""}
+                    textarea(class="form-control rounded-0" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="" "#<ifstr(@enable_controls,'','disabled')>"=""){$""}
                     #!
                     break
                 }
@@ -97,7 +132,7 @@ module "form.dk"
                 {
                     #$
                     label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
-                    input(class="form-control rounded-0" type="number" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    input(class="form-control rounded-0" type="number" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="" "#<ifstr(@enable_controls,'','disabled')>"="")
                     #!
                     break
                 }
@@ -105,7 +140,7 @@ module "form.dk"
                 {
                     #$
                     label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
-                    input(class="form-control rounded-0" type="file" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    input(class="form-control rounded-0" type="file" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="" "#<ifstr(@enable_controls,'','disabled')>"="")
                     #!
                     break
                 }
@@ -119,7 +154,7 @@ module "form.dk"
 
                     if _type == "query"
                     {
-                        ref _values = dbr.list(@("&database"), _query, @null)
+                        ref _values = dbr.list(db, _query, @null)
                     }
 
                     new select_def
@@ -136,6 +171,7 @@ module "form.dk"
                     }
 
                     if required != "" { select_def<"attributes/required"> : "true" }
+                    if not(@enable_controls) { select_def<"attributes/disabled"> : "true" }
 
                     #$
                     label(class="form-label" "for"="sel_#<ctrlName>"){$"#<caption>"}
@@ -148,7 +184,7 @@ module "form.dk"
                 {
                     #$
                     label(class="form-label" "for"="txt_#<ctrlName>"){$"#<caption>"}
-                    input(class="form-control rounded-0" type="text" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="")
+                    input(class="form-control rounded-0" type="text" name="#<ctrlName>" id="txt_#<ctrlName>" "#<required>"="" "#<ifstr(@enable_controls,'','disabled')>"="")
                     #!
                     break
                 }
@@ -159,7 +195,9 @@ module "form.dk"
     #$
     div(class="container p-0")
     {
+        link(href="#<@CSS_BATCH>" rel="stylesheet")
         script(src="#<@JS_TASKMAN>"){""}
+
         div(id="main_bar" class="row container-section my-2 px-0 py-2 border-bottom")
         {
             div(class="col-4 d-flex align-items-center p-0")
@@ -180,7 +218,12 @@ module "form.dk"
             }
         }
 
-        h5{"Programa: #<program>"}
+        div(class="d-flex align-items-center gap-2 mb-2")
+        {
+            div(class="spinner-border text-secondary #<ifstr(show_spinner,'','d-none')>" role="status" id="spinner"){span(class="visually-hidden"){$"En ejecucion..."}}
+            h5(class="m-0"){"Programa: #<program>"}
+            div(class="d-flex align-items-center text-secondary #<ifstr(show_st_text,'','d-none')>" id="status_text"){$"| #<program_st_text>"}
+        }
 
         h6{"Parámetros: "}
         
@@ -191,7 +234,7 @@ module "form.dk"
             form(class="border p-2" id="_program_params")
             {
                 $""
-                #! do generateHtmlControls(def_ctrl_params_path)
+                #! do generateHtmlControls(db,def_ctrl_params_path)
             }
         }
         else
@@ -202,11 +245,17 @@ module "form.dk"
                 id="_program_params"
                 rows="10"
                 placeholder="{\r\n\t\"clave\":\"valor\"\r\n}"
+                "#<ifstr(@enable_controls,'','disabled')>"=""
             ){$""}
         }
         #$
 
-        button(class="btn btn-sm mt-2 border-secondary induxsoft-corners btn-main-action" onclick="taskman.runProgram();"){"Ejecutar programa"}
+        button(
+            class="btn btn-sm mt-2 border-secondary induxsoft-corners btn-main-action"
+            id="btn_run_program"
+            onclick="taskman.runProgram();"
+            "#<ifstr(@enable_controls,'','disabled')>"=""
+        ){$"Ejecutar programa"}
 
         #! if last_error!=""
         {
@@ -225,6 +274,8 @@ module "form.dk"
             $'
             taskman.url="#<replace(@BATCH_DETAIL_PROG_TASKMAN,"{taskname}",program)>";
             taskman._entity_id=#<@("#./sys_pk")>;
+            taskman.program_token = "#<program_token>";
+            taskman.program_status = #<program_status>;
             '
         }
     }

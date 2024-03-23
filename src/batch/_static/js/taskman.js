@@ -3,6 +3,9 @@ document.addEventListener("DOMContentLoaded",()=>{taskman.init()});
 
 var taskman=
 {
+    program_token:"",
+    program_status:0,
+
     init()
     {
         taskman.file_program=document.getElementById("file_program");
@@ -14,7 +17,45 @@ var taskman=
         taskman.name_program=document.getElementById("name_program");
         taskman.content_dkl=document.getElementById("content_dkl");
         taskman.config_params=document.getElementById("config_params");
-    },  
+
+        this.checkProgramStatus();
+    },
+
+    checkProgramStatus()
+    {
+        if (this.program_status >= 3) return;
+
+        let url = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-status";
+        fetch(url).then(response => response.json())
+        .then(data => {
+            if (data && data.status < 3)
+            {
+                console.log("consultando...");
+                this.checkProgramStatus();
+            }
+            else
+            {
+                const spinner = document.getElementById("spinner");
+                const st_text = document.getElementById("status_text");
+                const program_params = document.getElementById("_program_params");
+                const btn_run_program = document.getElementById("btn_run_program");
+
+                spinner.classList.add("d-none");
+                st_text.classList.add("d-none");
+                btn_run_program.disabled = false;
+                program_params.disabled = false;
+                if (program_params.tagName.toLowerCase() === "form")
+                {
+                    let controls = _program_params.elements;
+                    for (let i = 0; i < controls.length; i++) {
+                        const element = controls[i];
+                        element.disabled = false;
+                    }
+                }
+            }
+        });
+    },
+
     uploadProgram()
     {
         var data=new FormData();
@@ -38,6 +79,7 @@ var taskman=
             },
         "PUT", false, false, "", true);
     },
+
     cretePrograma()
     {
         if(!taskman.name_program || !taskman.content_dkl)return;
@@ -84,6 +126,7 @@ var taskman=
             },
         "PATCH", false);
     },
+
     async runProgram()
     {
         const _program_params = document.getElementById("_program_params");
@@ -155,14 +198,18 @@ var taskman=
             }
         }
 
+        const btn_run_program = document.getElementById("btn_run_program");
+
         let endpoint = taskman.url.replace("{id}",taskman._entity_id)+"?run=1";
         let data = { params: params }
 
+        btn_run_program.disabled = true;
         InduxsoftCrudlModel.InvokeService(endpoint, data,
             (data) => { window.location.reload(); },
             (error) => { alert(error.message ?? JSON.stringify(error)); },
         "PATCH", false);
     },
+
     showModal(modalId='')
     {
         this.getBSModal(modalId).show();
