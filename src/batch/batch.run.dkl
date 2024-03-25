@@ -61,6 +61,7 @@ program
         do batch.saveLog(@@(context,"$job/id"),"Programa no encontrado.")
         return
     }
+    do batch.updateStatus(@@(context,"job/id"),1)
     
     do runscript(program,"batch_context", context)
 
