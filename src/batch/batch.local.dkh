@@ -200,14 +200,24 @@ module "batch"
             do batch.saveLog(@@(context,"$job/id"),"Programa no encontrado.")
             return
         }
-        
-        do batch.updateStatus(@@(context,"job/group_id"),1)
 
         ref db=batch.openDB()
         qname=dbr.full_qname(db)
-        
-        res= exec("./dkl",'batch/batch.run.dkl "token='+@@(context,"job/id")+'" "db='+qname+'" ',@wait_program)
-        
+
+        args='batch/batch.run.dkl "token='+@@(context,"job/id")+'" "db='+qname+'" '
+
+        res= exec("./dkl",args,@wait_program)
+
+        do sleep(@batch_exec_timeout)
+
+        new params{@"job_token":@@(context,"job/id")}
+        ref job=batch.getStatusJob(db,params)
+
+        if not(isnull(job)) && @@(job,"#status")==@batch_status_solicitado
+        {
+            msg="Programa no iniciado, Verifique si cuenta con una licencia de devkron"
+            do batch.finishedWithErrors(db,msg,context)
+        }
         return res
     }
 
@@ -216,6 +226,7 @@ module "batch"
     {
         new p
         {
+            @"token":token
             @"job_token":token
             @"new_status":status
         }
