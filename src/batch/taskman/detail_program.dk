@@ -30,7 +30,8 @@ module "form.dk"
         exit_url_encode = replace(@BATCH_ADD_EDIT_TASKMAN,'{id}',@('$./sys_pk'))
     }
     
-    ref files=batch.list_programs(@@(jobsgroup,"$sys_guid"))
+    ref files = batch.list_programs(@@(jobsgroup,"$sys_guid"))
+
     for i = 0; i < @count(files)
     {
         f=list.str(files,i)
@@ -40,6 +41,7 @@ module "form.dk"
             break
         }
     }
+
     last_error=batch.last_error(db,@@(jobsgroup,"$sys_guid"),program)
 
     new p
@@ -47,29 +49,8 @@ module "form.dk"
         @"jobgroup": entity_id
         @"program": program
     }
-    sql_program = "
-    SELECT
-        sys_pk,
-        sys_guid,
-        jp_ref,
-        program,
-        jstatus AS `status`,
-        CASE jstatus
-            WHEN 0 THEN 'Solicitado'
-            WHEN 1 THEN 'En proceso'
-            WHEN 2 THEN 'Pausado'
-            WHEN 3 THEN 'Terminado'
-            WHEN 4 THEN 'Terminado (con errores)'
-            WHEN 99 THEN 'Cancelado'
-            ELSE 'Indeterminado'
-        END status_text
-    FROM job 
-    WHERE jp_ref = @jobgroup
-        AND program = @program
-    ORDER BY sys_dtcreated DESC
-    LIMIT 1
-    "
-    ref dtProgram = dbr.rec(db,sql_program,p)
+
+    ref dtProgram = batch.return_job(db,p)
 
     program_token = @@(dtProgram,"$sys_guid")
     program_status = @@(dtProgram,"#status")

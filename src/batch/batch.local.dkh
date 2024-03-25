@@ -38,6 +38,7 @@ module "batch"
         if @@(dataBytoken,"$result")!=""{ref result=from.json(@@(dataBytoken,"result"))}
 
         dataBytoken<"id">:token
+
         new batch_context
         {
             @"credentials*":credentials //{ "group":"grupo de trabajos", "apikey":"clave de api" }
@@ -45,8 +46,7 @@ module "batch"
             @"job*": dataBytoken
             @"result*": result // Aquí deberá asignarse el resultado del trabajo
         }
-
-           
+   
         return batch_context
         // Regresar un objeto batch_context
     }
@@ -464,6 +464,7 @@ module "batch"
         do dir.ensure(ruta_programas)
         do file.delete(ruta_archivo)
     }
+
     batch.list_programs::groupid
     {
         ref programs=batch.listTask(groupid)
@@ -473,6 +474,7 @@ module "batch"
 
         return programs
     }
+
     #!
     batch.listTask::groupidOrname
     {
@@ -480,6 +482,7 @@ module "batch"
         do dir.ensure(ruta_programas)
         return list.files(ruta_programas, @filter_files)
     }
+
     #!
     batch.last_error::&db,groupid,name_program
     {
@@ -497,6 +500,34 @@ module "batch"
         ORDER BY jg.sys_pk DESC LIMIT 1"
 
         return dbr.str(db,sql,params)
+    }
+
+    batch.return_job::&db,p
+    {
+        sql_program = "
+            SELECT
+            sys_pk,
+            sys_guid,
+            jp_ref,
+            program,
+            jstatus AS `status`,
+            CASE jstatus
+                WHEN 0 THEN 'Solicitado'
+                WHEN 1 THEN 'En proceso'
+                WHEN 2 THEN 'Pausado'
+                WHEN 3 THEN 'Terminado'
+                WHEN 4 THEN 'Terminado (con errores)'
+                WHEN 99 THEN 'Cancelado'
+                ELSE 'Indeterminado'
+                END status_text
+            FROM job 
+            WHERE jp_ref = @jobgroup
+                AND program = @program
+            ORDER BY sys_dtcreated DESC
+            LIMIT 1
+        "
+
+        return dbr.rec(db,sql_program,p)
     }
 }
 
