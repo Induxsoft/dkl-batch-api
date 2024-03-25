@@ -20,6 +20,15 @@ module "form.dk"
     error = @("$error/message")
     isNew = (entity_id == "_new")
     program = @("$parameters/_view")
+    exit_url_encode = @("$parameters/exit_url_encode")
+
+    if (exit_url_encode != "") {
+        refresh_url = "?exit_url_encode=" + exit_url_encode
+        exit_url_encode = url_dcode(exit_url_encode)
+    } else {
+        refresh_url = "./"
+        exit_url_encode = replace(@BATCH_ADD_EDIT_TASKMAN,'{id}',@('$./sys_pk'))
+    }
     
     ref files=batch.list_programs(@@(jobsgroup,"$sys_guid"))
     for i = 0; i < @count(files)
@@ -207,11 +216,11 @@ module "form.dk"
 
             div(class="col-8 d-flex align-items-center justify-content-end p-0 gap-2")
             {
-                a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar") 
+                a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action" href="#<refresh_url>" title="Refrescar") 
                 {
                     $"#<@@(@icons,'ARROW_CLOCKWISE')>"
                 }
-                a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action" href="#<replace(@BATCH_ADD_EDIT_TASKMAN,'{id}',@('$./sys_pk'))>" title="Salir") 
+                a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action" href="#<exit_url_encode>" title="Salir") 
                 {
                     $"#<@@(@icons,'X')>"
                 }
