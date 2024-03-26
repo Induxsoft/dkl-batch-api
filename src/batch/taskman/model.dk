@@ -51,8 +51,35 @@ module ""
                 ORDER BY sys_dtcreated DESC
                 LIMIT 1
                 "
+
                 return dbr.rec(db,sql_program,p)
             }
+            case "get-program-log"
+            {
+                jobgroup = @@(params,"$_entity_id")
+                program = @@(params,"$_view")
+
+                query = "SELECT sys_guid FROM jobsgroup WHERE sys_pk = " + jobgroup
+                sys_guid = dbr.str(db,query,@null)
+
+                /* new last_error {
+                    @"last_error" : batch.last_error(db,sys_guid,program)
+                } */
+
+
+                
+                return batch.getStatusJobLog(db,params)
+            }
+            /* case "cancel-task"
+            {
+                new p
+                {
+                    @"sys_guid": @@(params,"$sys_guid")
+                }
+
+                query = "UPDATE job SET status = 99 WHERE sys_guid = @sys_guid"
+                do dbr.execute(db,query,p)
+            } */
             default
             {
                 return entity.read(db,params)
@@ -165,7 +192,7 @@ module ""
     point @update to taskman.save
     point @read to taskman.read
 
-    ref @create =@null
+    ref @create = @null
 
     limpiarTexto::texto
 	{

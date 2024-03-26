@@ -5,36 +5,36 @@ var taskman=
 {
     program_token:"",
     program_status:0,
+    interval_time:0,
+    job: 0,
 
     init()
     {
-        taskman.file_program=document.getElementById("file_program");
+        taskman.file_program = document.getElementById("file_program");
+
         if(taskman.file_program)taskman.file_program.addEventListener("change",()=>
         {
             taskman.uploadProgram();
         });
 
-        taskman.name_program=document.getElementById("name_program");
-        taskman.content_dkl=document.getElementById("content_dkl");
-        taskman.config_params=document.getElementById("config_params");
+        taskman.name_program = document.getElementById("name_program");
+        taskman.content_dkl = document.getElementById("content_dkl");
+        taskman.config_params = document.getElementById("config_params");
 
-        this.checkProgramStatus();
+        setInterval(this.checkProgramStatus, this.interval_time);
     },
 
     checkProgramStatus()
     {
         if (this.program_status >= 3) return;
 
-        let url = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-status";
-        fetch(url).then(response => response.json())
+        let url1 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-status";
+
+        fetch(url1).then(response => response.json())
         .then(data => {
-            if (data && data.status < 3)
-            {
+            if (data && data.status < 3) {
                 console.log("consultando...");
-                this.checkProgramStatus();
-            }
-            else
-            {
+            } else {
                 const spinner = document.getElementById("spinner");
                 const st_text = document.getElementById("status_text");
                 const program_params = document.getElementById("_program_params");
@@ -44,8 +44,8 @@ var taskman=
                 st_text.classList.add("d-none");
                 btn_run_program.disabled = false;
                 program_params.disabled = false;
-                if (program_params.tagName.toLowerCase() === "form")
-                {
+                
+                if (program_params.tagName.toLowerCase() === "form") {
                     let controls = _program_params.elements;
                     for (let i = 0; i < controls.length; i++) {
                         const element = controls[i];
@@ -53,6 +53,20 @@ var taskman=
                     }
                 }
             }
+        });
+
+        let url2 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-log&job_token="+taskman.job;
+
+        fetch(url2).then(response => response.json())
+        .then(data => {
+            errors.replaceChildren();
+
+            data.log.map(error => {
+                small = document.createElement("small");
+                small.textContent = error.note + "\n";
+                small.style.cssText = "white-space: break-spaces;"
+                errors.prepend(small);
+            })
         });
     },
 
@@ -210,14 +224,25 @@ var taskman=
         "PATCH", false);
     },
 
+    /* cancelTask()
+    {
+        let url = taskman.url.replace("{id}",taskman._entity_id)+"?_act=cancel-task&sys_guid="+this.program_token;
+        fetch(url).then(response => response.json())
+        .then(() => {
+            console.log("Tarea cancelada")
+        });
+    }, */
+
     showModal(modalId='')
     {
         this.getBSModal(modalId).show();
     },
+
     hideModal(modalId='')
     {
         this.getBSModal(modalId).hide();
     },
+
     getBSModal(modalId='')
     {
         if(modalId.trim()=="")return;

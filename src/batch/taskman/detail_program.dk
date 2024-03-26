@@ -21,6 +21,7 @@ module "form.dk"
     isNew = (entity_id == "_new")
     program = @("$parameters/_view")
     exit_url_encode = @("$parameters/exit_url_encode")
+    interval_time = @batch_interval_time
 
     if (exit_url_encode != "") {
         refresh_url = "?exit_url_encode=" + exit_url_encode
@@ -42,7 +43,7 @@ module "form.dk"
         }
     }
 
-    last_error=batch.last_error(db,@@(jobsgroup,"$sys_guid"),program)
+    last_error = batch.last_error(db,@@(jobsgroup,"$sys_guid"),program)
 
     new p
     {
@@ -211,8 +212,12 @@ module "form.dk"
         div(class="d-flex align-items-center gap-2 mb-2")
         {
             div(class="spinner-border text-secondary #<ifstr(show_spinner,'','d-none')>" role="status" id="spinner"){span(class="visually-hidden"){$"En ejecucion..."}}
+
             h5(class="m-0"){"Programa: #<program>"}
+
             div(class="d-flex align-items-center text-secondary #<ifstr(show_st_text,'','d-none')>" id="status_text"){$"| #<program_st_text>"}
+
+            button(onclick="taskman.cancelTask()" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"){$"Cancelar Tarea"}
         }
 
         h6{"Parámetros: "}
@@ -253,20 +258,20 @@ module "form.dk"
             hr{}
             div
             {
-                h6{"Último log: "}
-                small(style="white-space: break-spaces;"){$"#<last_error>"}
+                h6{"Logs: "}
+                div(class="overflow-auto" style="height:550px; max-height:550px; margin-bottom:15px" id="errors") {}
             }
         }
 
         #$
         script
-        {
-            $'
+        {$' 
             taskman.url="#<replace(@BATCH_DETAIL_PROG_TASKMAN,"{taskname}",program)>";
             taskman._entity_id=#<@("#./sys_pk")>;
             taskman.program_token = "#<program_token>";
             taskman.program_status = #<program_status>;
-            '
-        }
+            taskman.interval_time = #<interval_time>;
+            taskman.job = "#<@@(dtProgram,"sys_guid")>";
+        '}
     }
 }

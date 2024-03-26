@@ -83,7 +83,7 @@ module "batch"
 
         do dbr.insert(db,"job",job)
 
-        do batch.saveLog(token,"Trabajo creada")        
+        do batch.saveLog(token,"Trabajo creado")        
         do batch.start(batch.loadContextByToken(db,token))
 
         return job
@@ -265,7 +265,7 @@ module "batch"
             @"sys_dtcreated*":now
             @"sys_timestamp*":now
             @"job_ref":dbr.num(batch.openDB(),@get_id_job,p)
-            @"note":ifstr(@@(context,"note")!="",@@(context,"note"),"Trabajo terminada")
+            @"note":ifstr(@@(context,"note")!="",@@(context,"note"),"Trabajo terminado")
             @"new_percentage":@@(context,"#porcentage")
             @"new_steps_completed":@@(context,"#steps")
             @"sender":@@(context,"sender")
@@ -410,7 +410,7 @@ module "batch"
         do dbr.execute(db,@update_status_job,status)
 
         ref data=dbr.rec(db,@get_time_stamp_job,status)
-        do batch.saveLog(@@(status,"sys_pk"),"Trabajo creada")
+        do batch.saveLog(@@(status,"sys_pk"),"Trabajo creado")
 
         return data
     }
