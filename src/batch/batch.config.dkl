@@ -9,7 +9,9 @@ module "config"
     @batch_exec_timeout= 3000 //3 segundos
 	@wait_program=@false
     @batch_status_solicitado = 0
-    @batch_interval_time = 5000 // 5 segundos
+    @batch_interval_time = 2500 // 10 segundos
+    @batch_progress_type = 2
+    @batch_steps = 10
 
 	// _STATIC
     @JS_CRONTASK = "/$/batch/js/crontask.js"

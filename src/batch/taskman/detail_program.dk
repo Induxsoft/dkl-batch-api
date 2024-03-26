@@ -22,6 +22,8 @@ module "form.dk"
     program = @("$parameters/_view")
     exit_url_encode = @("$parameters/exit_url_encode")
     interval_time = @batch_interval_time
+    progress_type = @batch_progress_type
+    steps = @batch_steps
 
     if (exit_url_encode != "") {
         refresh_url = "?exit_url_encode=" + exit_url_encode
@@ -217,7 +219,7 @@ module "form.dk"
 
             div(class="d-flex align-items-center text-secondary #<ifstr(show_st_text,'','d-none')>" id="status_text"){$"| #<program_st_text>"}
 
-            button(onclick="taskman.cancelTask()" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"){$"Cancelar Tarea"}
+            button(onclick="taskman.cancelTask()" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem" id="btn-cancel"){$"Cancelar Tarea"}
         }
 
         h6{"Parámetros: "}
@@ -259,7 +261,9 @@ module "form.dk"
             div
             {
                 h6{"Logs: "}
-                div(class="overflow-auto" style="height:550px; max-height:550px; margin-bottom:15px" id="errors") {}
+                div(class="overflow-auto" style="height:550px; max-height:550px; margin-bottom:15px" id="errors") {
+                    small(style="white-space: break-spaces;"){$"#<last_error>"}
+                }
             }
         }
 
@@ -271,6 +275,8 @@ module "form.dk"
             taskman.program_token = "#<program_token>";
             taskman.program_status = #<program_status>;
             taskman.interval_time = #<interval_time>;
+            taskman.progress_type = #<progress_type>;
+            taskman.steps = #<steps>;
             taskman.job = "#<@@(dtProgram,"sys_guid")>";
         '}
     }

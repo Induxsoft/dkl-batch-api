@@ -61,25 +61,18 @@ module ""
 
                 query = "SELECT sys_guid FROM jobsgroup WHERE sys_pk = " + jobgroup
                 sys_guid = dbr.str(db,query,@null)
-
-                /* new last_error {
-                    @"last_error" : batch.last_error(db,sys_guid,program)
-                } */
-
-
                 
                 return batch.getStatusJobLog(db,params)
             }
-            /* case "cancel-task"
+            case "cancel-task"
             {
-                new p
-                {
-                    @"sys_guid": @@(params,"$sys_guid")
-                }
+                //token = @@(@batch_context,"$job/token")
+                new p { @"sys_guid": @@(params,"$sys_guid_job") }
+                query = "UPDATE job SET jstatus = 99 WHERE sys_guid = @sys_guid"
 
-                query = "UPDATE job SET status = 99 WHERE sys_guid = @sys_guid"
+                //do batch.saveLog(@@(p,"sys_guid"),"Trabajo cancelado.");
                 do dbr.execute(db,query,p)
-            } */
+            }
             default
             {
                 return entity.read(db,params)
@@ -167,6 +160,8 @@ module ""
             {
                 @"jp_ref":@@(jg,"#sys_pk")
                 @"program":@@(params,"$_view")
+                @"progress_type":@@(params,"$progress_type")
+                @"steps":@@(params,"$steps")
             }
             if trim(@@(data,"$params"))!=""{data_batch<"params*">:from.json(@@(data,"$params"))}
             

@@ -3,9 +3,11 @@ document.addEventListener("DOMContentLoaded",()=>{taskman.init()});
 
 var taskman=
 {
-    program_token:"",
-    program_status:0,
-    interval_time:0,
+    program_token: "",
+    program_status: 0,
+    interval_time: 0,
+    progress_type: 0,
+    steps: 0,
     job: 0,
 
     init()
@@ -20,6 +22,9 @@ var taskman=
         taskman.name_program = document.getElementById("name_program");
         taskman.content_dkl = document.getElementById("content_dkl");
         taskman.config_params = document.getElementById("config_params");
+        taskman.btn_cancel = document.getElementById("btn-cancel");
+
+        taskman.btn_cancel.classList.add("d-none")
 
         setInterval(this.checkProgramStatus, this.interval_time);
     },
@@ -32,8 +37,11 @@ var taskman=
 
         fetch(url1).then(response => response.json())
         .then(data => {
-            if (data && data.status < 3) {
+            if (data && data.status == 99) {
+                if (!taskman.btn_cancel.classList.contains("d-none")) taskman.btn_cancel.classList.add("d-none")
+            } if (data && data.status < 3) {
                 console.log("consultando...");
+                if (taskman.btn_cancel.classList.contains("d-none")) taskman.btn_cancel.classList.remove("d-none")
             } else {
                 const spinner = document.getElementById("spinner");
                 const st_text = document.getElementById("status_text");
@@ -44,6 +52,8 @@ var taskman=
                 st_text.classList.add("d-none");
                 btn_run_program.disabled = false;
                 program_params.disabled = false;
+
+                if (!taskman.btn_cancel.classList.contains("d-none")) taskman.btn_cancel.classList.add("d-none")
                 
                 if (program_params.tagName.toLowerCase() === "form") {
                     let controls = _program_params.elements;
@@ -176,6 +186,7 @@ var taskman=
                         method: "PATCH",
                         body: frmFiles
                     });
+
                     if (!response.ok) { alert('Hubo un problema con la solicitud: ' + response.status); return; }
                     const data = await response.json();
                     
@@ -214,7 +225,7 @@ var taskman=
 
         const btn_run_program = document.getElementById("btn_run_program");
 
-        let endpoint = taskman.url.replace("{id}",taskman._entity_id)+"?run=1";
+        let endpoint = taskman.url.replace("{id}",taskman._entity_id)+"?run=1&progress_type="+this.progress_type+"&steps="+this.steps;
         let data = { params: params }
 
         btn_run_program.disabled = true;
@@ -224,14 +235,15 @@ var taskman=
         "PATCH", false);
     },
 
-    /* cancelTask()
+    cancelTask()
     {
-        let url = taskman.url.replace("{id}",taskman._entity_id)+"?_act=cancel-task&sys_guid="+this.program_token;
+        let url = taskman.url.replace("{id}",taskman._entity_id)+"?_act=cancel-task&sys_guid_job="+taskman.job;
+
         fetch(url).then(response => response.json())
         .then(() => {
-            console.log("Tarea cancelada")
+            if (!taskman.btn_cancel.classList.contains("d-none")) taskman.btn_cancel.classList.add("d-none")
         });
-    }, */
+    },
 
     showModal(modalId='')
     {
