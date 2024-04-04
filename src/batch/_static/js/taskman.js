@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded",()=>{taskman.init()});
 
 var taskman=
 {
+    show_logs: false,
     program_token: "",
     program_status: 0,
     interval_time: 0,
@@ -22,26 +23,30 @@ var taskman=
         taskman.name_program = document.getElementById("name_program");
         taskman.content_dkl = document.getElementById("content_dkl");
         taskman.config_params = document.getElementById("config_params");
-        taskman.btn_cancel = document.getElementById("btn-cancel");
 
-        taskman.btn_cancel.classList.add("d-none")
+        const btn_cancel = document.getElementById("btn-cancel");
+        if (btn_cancel) btn_cancel.classList.add("d-none");
 
-        setInterval(this.checkProgramStatus, this.interval_time);
+        taskman.url1 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-status";
+        taskman.url2 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-log&job_token="+taskman.job;
+
+        if (btn_cancel) setInterval(this.checkProgramStatus, this.interval_time, btn_cancel);
     },
 
-    checkProgramStatus()
+    checkProgramStatus(btn_cancel)
     {
         if (this.program_status >= 3) return;
 
-        let url1 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-status";
-
-        fetch(url1).then(response => response.json())
+        fetch(taskman.url1).then(response => response.json())
         .then(data => {
             if (data && data.status == 99) {
-                if (!taskman.btn_cancel.classList.contains("d-none")) taskman.btn_cancel.classList.add("d-none")
-            } if (data && data.status < 3) {
+                if (!btn_cancel.classList.contains("d-none")) btn_cancel.classList.add("d-none")
+            }
+
+            if (data && data.status < 3) {
                 console.log("consultando...");
-                if (taskman.btn_cancel.classList.contains("d-none")) taskman.btn_cancel.classList.remove("d-none")
+                if (btn_cancel.classList.contains("d-none")) btn_cancel.classList.remove("d-none")
+                taskman.show_logs = true;
             } else {
                 const spinner = document.getElementById("spinner");
                 const st_text = document.getElementById("status_text");
@@ -53,7 +58,7 @@ var taskman=
                 btn_run_program.disabled = false;
                 program_params.disabled = false;
 
-                if (!taskman.btn_cancel.classList.contains("d-none")) taskman.btn_cancel.classList.add("d-none")
+                if (!btn_cancel.classList.contains("d-none")) btn_cancel.classList.add("d-none")
                 
                 if (program_params.tagName.toLowerCase() === "form") {
                     let controls = _program_params.elements;
@@ -62,12 +67,21 @@ var taskman=
                         element.disabled = false;
                     }
                 }
+
+                if (data.status == 3 && this.show_logs == true) {
+                    taskman.updateLogs();
+                }
             }
         });
 
-        let url2 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-log&job_token="+taskman.job;
+        if (taskman.show_logs == true) {
+            taskman.updateLogs();
+        }
+    },
 
-        fetch(url2).then(response => response.json())
+    updateLogs()
+    {
+        fetch(taskman.url2).then(response => response.json())
         .then(data => {
             errors.replaceChildren();
 
