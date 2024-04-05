@@ -3,7 +3,6 @@ document.addEventListener("DOMContentLoaded",()=>{taskman.init()});
 
 var taskman=
 {
-    show_logs: false,
     program_token: "",
     program_status: 0,
     interval_time: 0,
@@ -24,41 +23,39 @@ var taskman=
         taskman.content_dkl = document.getElementById("content_dkl");
         taskman.config_params = document.getElementById("config_params");
 
+        const spinner = document.getElementById("spinner");
+        const st_text = document.getElementById("status_text");
+        const program_params = document.getElementById("_program_params");
+        const btn_run_program = document.getElementById("btn_run_program");
         const btn_cancel = document.getElementById("btn-cancel");
-        if (btn_cancel) btn_cancel.classList.add("d-none");
+
+        if (btn_cancel) btn_cancel.classList.add("d-none")
 
         taskman.url1 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-status";
         taskman.url2 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-log&job_token="+taskman.job;
 
-        if (btn_cancel) setInterval(this.checkProgramStatus, this.interval_time, btn_cancel);
+        if (spinner && st_text && program_params && btn_run_program && btn_cancel) {
+            setInterval(this.checkProgramStatus, this.interval_time, spinner, st_text, program_params, btn_run_program, btn_cancel);
+        }
     },
 
-    checkProgramStatus(btn_cancel)
+    checkProgramStatus(spinner, st_text, program_params, btn_run_program, btn_cancel)
     {
         if (this.program_status >= 3) return;
 
         fetch(taskman.url1).then(response => response.json())
         .then(data => {
+
             if (data && data.status == 99) {
                 if (!btn_cancel.classList.contains("d-none")) btn_cancel.classList.add("d-none")
-            }
-
-            if (data && data.status < 3) {
-                console.log("consultando...");
-                if (btn_cancel.classList.contains("d-none")) btn_cancel.classList.remove("d-none")
-                taskman.show_logs = true;
+            } if (data && data.status < 3) {
+                btn_cancel.classList.remove("d-none")
             } else {
-                const spinner = document.getElementById("spinner");
-                const st_text = document.getElementById("status_text");
-                const program_params = document.getElementById("_program_params");
-                const btn_run_program = document.getElementById("btn_run_program");
-
                 spinner.classList.add("d-none");
                 st_text.classList.add("d-none");
                 btn_run_program.disabled = false;
                 program_params.disabled = false;
-
-                if (!btn_cancel.classList.contains("d-none")) btn_cancel.classList.add("d-none")
+                btn_cancel.classList.add("d-none")
                 
                 if (program_params.tagName.toLowerCase() === "form") {
                     let controls = _program_params.elements;
@@ -67,16 +64,10 @@ var taskman=
                         element.disabled = false;
                     }
                 }
-
-                if (data.status == 3 && taskman.show_logs == true) {
-                    taskman.updateLogs();
-                }
             }
         });
 
-        if (taskman.show_logs == true) {
-            taskman.updateLogs();
-        }
+        taskman.updateLogs();
     },
 
     updateLogs()
@@ -244,7 +235,7 @@ var taskman=
 
         btn_run_program.disabled = true;
         InduxsoftCrudlModel.InvokeService(endpoint, data,
-            (data) => { {} },
+            (data) => { window.location.reload(); },
             (error) => { alert(error.message ?? JSON.stringify(error)); },
         "PATCH", false);
     },

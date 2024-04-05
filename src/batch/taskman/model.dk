@@ -58,9 +58,6 @@ module ""
             {
                 jobgroup = @@(params,"$_entity_id")
                 program = @@(params,"$_view")
-
-                query = "SELECT sys_guid FROM jobsgroup WHERE sys_pk = " + jobgroup
-                sys_guid = dbr.str(db,query,@null)
                 
                 return batch.getStatusJobLog(db,params)
             }
