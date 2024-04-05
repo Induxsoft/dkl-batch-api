@@ -68,7 +68,7 @@ var taskman=
                     }
                 }
 
-                if (data.status == 3 && this.show_logs == true) {
+                if (data.status == 3 && taskman.show_logs == true) {
                     taskman.updateLogs();
                 }
             }
@@ -244,7 +244,7 @@ var taskman=
 
         btn_run_program.disabled = true;
         InduxsoftCrudlModel.InvokeService(endpoint, data,
-            (data) => { window.location.reload(); },
+            (data) => { {} },
             (error) => { alert(error.message ?? JSON.stringify(error)); },
         "PATCH", false);
     },

@@ -45,8 +45,6 @@ module "form.dk"
         }
     }
 
-    last_error = batch.last_error(db,@@(jobsgroup,"$sys_guid"),program)
-
     new p
     {
         @"jobgroup": entity_id
@@ -254,7 +252,7 @@ module "form.dk"
             "#<ifstr(@enable_controls,'','disabled')>"=""
         ){$"Ejecutar programa"}
 
-        #! if last_error!=""
+        #! if program_token!=""
         {
             #$
             hr{}
@@ -262,7 +260,7 @@ module "form.dk"
             {
                 h6{"Logs: "}
                 div(class="overflow-auto" style="height:550px; max-height:550px; margin-bottom:15px" id="errors") {
-                    small(style="white-space: break-spaces;"){$"#<last_error>"}
+                    small(style="white-space: break-spaces;"){$"ID del trabajo: #<program_token>"}
                 }
             }
         }
