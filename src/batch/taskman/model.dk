@@ -80,7 +80,7 @@ module ""
     taskman.upload::&db,&params,&data
     {
         ref files = @@(@http_context,"&request/files")
-
+        base_path_jg=path.concat(@batch_base_path,@@(params,"$sys_guid"))
         switch @@(params,"$upload")
         {
             case "program-files"
@@ -113,7 +113,7 @@ module ""
                     
                     if ext==".json" 
                     {
-                        if not(taskman.exist.file(@@(jg,"$sys_guid"),filename)){do rise_error(500,"Debe subir primero un archivo dkl o dk con el mismo nombre del archivo .json ")} 
+                        if not(taskman.exist.file(@@(params,"$sys_guid"),filename)){do rise_error(500,"Debe subir primero un archivo dkl o dk con el mismo nombre del archivo .json ")} 
                     }
                     else if ext!=".dkl" && ext!=".dk" {do rise_error(500,"No se admite otros programas que no sean .dkl,.dk,.dkh")}
 
@@ -130,9 +130,9 @@ module ""
         ref  jg=dbr.rec(db,"select sys_pk,sys_guid from jobsgroup where sys_pk=@_entity_id",params)
         if isnull(jg){do rise_error(500,"No se encontró datos del grupo indicado")}
         base_path_jg=path.concat(@batch_base_path,@@(jg,"$sys_guid"))
-
+        
         ref @batchDB=db //inicializar la bd, para el uso de las funciones batch
-
+        params<"sys_guid">:@@(jg,"$sys_guid")
         if field.exist(params,"upload")
         {
             return taskman.upload(db,params,data)
@@ -164,6 +164,8 @@ module ""
             
             return batch.create(db,data_batch)
         }
+
+        return jg
     }
 
     taskman.delete::&db,&params

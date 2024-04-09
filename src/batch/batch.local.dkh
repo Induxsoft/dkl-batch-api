@@ -189,7 +189,19 @@ module "batch"
         new p{@"idjg":idjg}
         return dbr.rec(db,ftext(@get_dataUpdate),p)
     }
+    batch.getConfig::&db
+    {
+        exec_time=dbr.vars.get(db,"batch_exec_timeout")
+        wait_program=dbr.vars.get(db,"wait_program")
+        batch_interval_time=dbr.vars.get(db,"batch_interval_time")
 
+        if parse.num(exec_time)>0{@batch_exec_timeout=parse.num(exec_time)}
+        if parse.num(batch_interval_time)>0{@batch_interval_time=parse.num(batch_interval_time)}
+
+        @wait_program=parse.bool(wait_program)
+
+        exception{}
+    }
     batch.start::&context
     {
         program=path.concat(@batch_base_path, @@(context,"job/group_id"))
@@ -202,6 +214,8 @@ module "batch"
         }
 
         ref db=batch.openDB()
+        do batch.getConfig(db)
+
         qname=dbr.full_qname(db)
 
         args='batch/batch.run.dkl "token='+@@(context,"job/id")+'" "db='+qname+'" '

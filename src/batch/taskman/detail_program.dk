@@ -14,6 +14,8 @@ module "form.dk"
     do @context.begin(@crud_context)
     ref db:@("&database")
     
+    do batch.getConfig(db)
+
     ref jobsgroup = ifnull(@("&."),record.create())
 
     entity_id = @("$parameters/_entity_id")

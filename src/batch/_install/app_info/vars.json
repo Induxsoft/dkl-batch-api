@@ -1,0 +1,55 @@
+[
+    {
+        "id": "batch",
+        "caption": "Procesamiento por lotes",
+        "help": "Variables del paquete: batch",
+        "vars": 
+        [
+            {
+                "varname": "batch_exec_timeout",
+                "vardefault": "3000",
+                "varvalue": "3000",
+                "varcaption": "Espera de la ejecución del programa del usuario.",
+                "varhelp":"define el tiempo de espera de la ejecución del programa del usuario.",
+                "vartype": "string",
+                "varinput": 
+                {
+                    "control": "text"
+                }
+            },
+            {
+                "varname": "batch_interval_time",
+                "vardefault": "10000",
+                "varvalue": "10000",
+                "varcaption": "Intervalo para solicitar datos del trabajo.",
+                "varhelp":"define el tiempo en la que la página solicitará datos del trabajo que esta en ejecución(default 10000 milisegundos = 10 segundos).",
+                "vartype": "string",
+                "varinput": 
+                {
+                    "control": "text"
+                }
+            },
+            {
+                "varname": "wait_program",
+                "vardefault": "false",
+                "varvalue": "false",
+                "varcaption": "Esperar programa en ejecución.",
+                "varhelp":"Esperar que el programa batch.run termine de ejecutar el trabajo.",
+                "vartype": "bool",
+                "varinput": 
+                {
+                    "control": "select",
+                    "source":{
+                        "type":"list",
+                        "values":[
+                            {"val":"true", "text":"Si"},
+                            {"val":"false", "text":"No"}
+                        ],
+                        "showfield":"text",
+                        "keyfield":"val"
+                    }
+                }
+            }
+        ]
+    }
+]
