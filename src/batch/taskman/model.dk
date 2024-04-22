@@ -6,7 +6,15 @@ module ""
 
     @table_name="jobsgroup"   
     @list_query="select *,date_format(sys_dtcreated,'%Y-%m-%d')created from jobsgroup limit 200"
+    @read_query="select * from #<@table_name> where sys_pk=@_entity_id or name=@_entity_id or sys_guid=@_entity_id limit 1"
 
+    isnum::n
+    {
+        do eval(n)
+        return @true
+        exception{}
+        return @false
+    }
     taskman.exist.file::groupid,name_file
     {
         ref programas=batch.list_programs(groupid)
@@ -31,11 +39,11 @@ module ""
                 }
                 sql_program = "
                 SELECT
-                    sys_pk,
-                    sys_guid,
-                    jp_ref,
-                    program,
-                    jstatus AS `status`,
+                    job.sys_pk,
+                    job.sys_guid,
+                    job.jp_ref,
+                    job.program,
+                    job.jstatus AS `status`,
                     CASE jstatus
                         WHEN 0 THEN 'Solicitado'
                         WHEN 1 THEN 'En proceso'
@@ -46,9 +54,10 @@ module ""
                         ELSE 'Indeterminado'
                     END status_text
                 FROM job 
-                WHERE jp_ref = @jobgroup
+                INNER JOIN jobsgroup jg on job.jp_ref=jg.sys_pk
+                WHERE (jp_ref = @jobgroup or jg.name=@jobgroup or jg.sys_guid=@jobgroup)
                     AND program = @program
-                ORDER BY sys_dtcreated DESC
+                ORDER BY job.sys_dtcreated DESC
                 LIMIT 1
                 "
 

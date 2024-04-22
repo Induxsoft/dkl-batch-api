@@ -22,6 +22,10 @@ module "form.dk"
     error = @("$error/message")
     isNew = (entity_id == "_new")
     program = @("$parameters/_view")
+    text_program=program
+    isdkl=(contains(text_program,".dkl") || contains(text_program,".dk"))
+    if isdkl{program=file.justname(text_program)}
+    
     exit_url_encode = @("$parameters/exit_url_encode")
     interval_time = @batch_interval_time
     progress_type = @batch_progress_type
@@ -43,6 +47,7 @@ module "form.dk"
         if file.justname(f)==program
         {
             program=file.name(f)
+            text_program=program
             break
         }
     }
@@ -54,7 +59,7 @@ module "form.dk"
     }
 
     ref dtProgram = batch.return_job(db,p)
-
+    
     program_token = @@(dtProgram,"$sys_guid")
     program_status = @@(dtProgram,"#status")
     program_st_text = @@(dtProgram,"$status_text")
@@ -63,7 +68,7 @@ module "form.dk"
     @enable_controls = (isnull(dtProgram) || program_status >= 3)
     
     def_ctrl_params_path = path.concat(@batch_base_path, @@(jobsgroup,"$sys_guid"))
-    def_ctrl_params_path = path.concat(def_ctrl_params_path, @("$parameters/_view") + ".json")
+    def_ctrl_params_path = path.concat(def_ctrl_params_path, file.justname(program) + ".json")
 
     function generateHtmlControls(&db,json_def_path)
     {
@@ -215,7 +220,7 @@ module "form.dk"
         {
             div(class="spinner-border text-secondary #<ifstr(show_spinner,'','d-none')>" role="status" id="spinner"){span(class="visually-hidden"){$"En ejecucion..."}}
 
-            h5(class="m-0"){"Programa: #<program>"}
+            h5(class="m-0"){"Programa: #<text_program>"}
 
             div(class="d-flex align-items-center text-secondary #<ifstr(show_st_text,'','d-none')>" id="status_text"){$"| #<program_st_text>"}
 
