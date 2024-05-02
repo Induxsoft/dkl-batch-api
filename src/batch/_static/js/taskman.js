@@ -35,7 +35,7 @@ var taskman=
         taskman.url2 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-log&job_token="+taskman.job;
 
         if (spinner && st_text && program_params && btn_run_program && btn_cancel) {
-            setInterval(this.checkProgramStatus, this.interval_time, spinner, st_text, program_params, btn_run_program, btn_cancel);
+            setInterval(this.checkProgramStatus(spinner, st_text, program_params, btn_run_program, btn_cancel), this.interval_time);
         }
     },
 
@@ -72,15 +72,24 @@ var taskman=
 
     updateLogs()
     {
+        const div_errors = document.getElementById("errors");
+
+        if (!div_errors) return;
+
         fetch(taskman.url2).then(response => response.json())
         .then(data => {
-            errors.replaceChildren();
-
+            if (data.message) {
+                console.error(data.message);
+                return;
+            }
+            
+            div_errors.innerHTML = ""; //replaceChildren();
+            
             data.log.map(error => {
                 small = document.createElement("small");
                 small.textContent = error.note + "\n";
                 small.style.cssText = "white-space: break-spaces;"
-                errors.prepend(small);
+                div_errors.prepend(small);
             })
         });
     },
