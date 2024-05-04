@@ -432,15 +432,14 @@ module "batch"
     #!
     batch.registerJobsGroup::&db,&data
     {
-        using data{@"sys_timestamp*":now()}
-
-        ref jgroups=dbr.rec(db,"select * from jobsgroup where name=@name",data)
+        ref jgroups = dbr.rec(db,"select * from jobsgroup where name=@name",data)
         if isnull(jgroups)
         {
+            if not(field.exist(data,"sys_guid")) { data<"sys_guid"> : uuid() }
             using data
             {
-                @"sys_guid":uuid()
-                @"sys_dtcreated*":now()
+                @"sys_dtcreated*": now()
+                @"sys_timestamp*": now()
             }
             do dbr.insert(db,"jobsgroup",data)
             ref jgroups=dbr.rec(db,"select * from jobsgroup where name=@name",data)
@@ -490,7 +489,7 @@ module "batch"
     batch.removeTask::groupidOrname,progname
     {
         if file.extension(progname) == "" { progname = progname + ".dkl" }
-        
+
         ruta_programas = path.concat(@batch_base_path,groupidOrname) 
         ruta_archivo = path.concat(ruta_programas, progname)
         
