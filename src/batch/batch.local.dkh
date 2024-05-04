@@ -465,6 +465,8 @@ module "batch"
     #!
     batch.addTask::groupidOrname,progname,dklcode
     {
+        if file.extension(progname) == "" { progname = progname + ".dkl" }
+
         ruta_programas = path.concat(@batch_base_path,groupidOrname) 
         ruta_nuevo_archivo = path.concat(ruta_programas, progname)
         
@@ -475,8 +477,11 @@ module "batch"
     #!
     batch.updateTask::groupidOrname,progname,dklcode
     {
+        if file.extension(progname) == "" { progname = progname + ".dkl" }
+
         ruta_programas = path.concat(@batch_base_path,groupidOrname) 
         ruta_archivo = path.concat(ruta_programas, progname)
+        
         do dir.ensure(ruta_programas)
         do file.wtext(ruta_archivo, dklcode)
     }
@@ -484,10 +489,25 @@ module "batch"
     #!
     batch.removeTask::groupidOrname,progname
     {
+        if file.extension(progname) == "" { progname = progname + ".dkl" }
+        
         ruta_programas = path.concat(@batch_base_path,groupidOrname) 
         ruta_archivo = path.concat(ruta_programas, progname)
+        
         do dir.ensure(ruta_programas)
         do file.delete(ruta_archivo)
+    }
+
+    #!
+    batch.updateTaskMetaData::groupidOrname,progname,&data
+    {
+        if file.extension(progname) == "" { progname = progname + ".json" }
+
+        ruta_programas = path.concat(@batch_base_path,groupidOrname) 
+        ruta_archivo = path.concat(ruta_programas, progname)
+        
+        do dir.ensure(ruta_programas)
+        do file.wtext(ruta_archivo, to.json(data))
     }
 
     batch.list_programs::groupid
