@@ -4,6 +4,8 @@ module "list"
 {
     #include "functions.dkh"
     #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "dbr.apps.dkl"
     #include "uielements.v12.dkl"
     #include "../batch.config.dkl"
 
@@ -50,13 +52,6 @@ module "list"
         }
     }
 
-    header_act::
-    { 
-        #$ a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print" href="#<@BATCH_CRONTASK>_new/"){$"Agregar"}
-    }
-
-    #! point general_act to header_act
-
     new nav_config
     {
         @"title": "Tareas programadas"
@@ -64,8 +59,11 @@ module "list"
         {
             @"print": @false
         }
-        @"buttons*": general_act
+        @"buttons*": @null
         @"urlexit": "/"
+        @"actions*": dbr.apps.itemactions(@('&database'),"DET04E","action","",0)
+        @"reports*": dbr.apps.itemactions(@('&database'),"DET04E","report","",0)
+        @"jscurrentcontext": "getCurrentContext"
     }
 
     #$
@@ -92,5 +90,16 @@ module "list"
 
             #! do uie.dbeditable(table_definition, "tbl_crontask")
         }
+
+        #$
+		script(type="text/javascript")
+		{$'
+			function getCurrentContext()
+			{
+				const table = document.getElementById("tbl_crontask");
+				const id = (table?.DataArray[table.CurrentRowIndex()]?.sys_pk ?? "");
+    			return { item_id:id, context: {} }
+			}
+		'}
     }
 }

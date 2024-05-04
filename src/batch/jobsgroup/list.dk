@@ -4,6 +4,8 @@ module "list"
 {
     #include "functions.dkh"
     #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "dbr.apps.dkl"
     #include "uielements.v12.dkl"
     #include "../batch.config.dkl"
 
@@ -45,13 +47,6 @@ module "list"
         }
     }
 
-    header_act::
-    { 
-        #$ a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print" href="#<@BATCH_JOBS_GROUP>_new/"){$"Agregar"}
-    }
-
-    #! point general_act to header_act
-
     new nav_config
     {
         @"title": "Grupos de tareas"
@@ -59,8 +54,11 @@ module "list"
         {
             @"print": @false
         }
-        @"buttons*": general_act
+        @"buttons*": @null
         @"urlexit": "/"
+        @"actions*": dbr.apps.itemactions(@('&database'),"DET026","action","",0)
+        @"reports*": dbr.apps.itemactions(@('&database'),"DET026","report","",0)
+        @"jscurrentcontext": "getCurrentContext"
     }
 
     #$
@@ -87,5 +85,16 @@ module "list"
 
             #! do uie.dbeditable(table_definition, "tbl_jobsgroup")
         }
+
+        #$
+		script(type="text/javascript")
+		{$'
+			function getCurrentContext()
+			{
+				const table = document.getElementById("tbl_jobsgroup");
+				const id = (table?.DataArray[table.CurrentRowIndex()]?.sys_pk ?? "");
+    			return { item_id:id, context: {} }
+			}
+		'}
     }
 }
