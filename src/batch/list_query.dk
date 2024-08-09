@@ -75,6 +75,6 @@ module "lista de consultas"
 
 	@get_dataUser="SELECT t.sys_guid FROM tuser t INNER JOIN sys_session s ON t.sys_pk=s.iuser WHERE s.sys_guid=@token AND IFNULL(s.sys_deleted,0)=0;"
 
-	@updateStatusJobFinishSuccess="update job set jstatus=3,steps=if(progress_type=1,100,@max) where sys_guid=@job_token or sys_pk=@sys_pk "
-	@updateStatusJobFinishWithErrors="update job set jstatus=if(jstatus=99,99,4) where sys_guid=@token or sys_pk=@sys_pk "
+	@updateStatusJobFinishSuccess="update job set end=now(), jstatus=3,steps=if(progress_type=1,100,@max) where sys_guid=@job_token or sys_pk=@sys_pk"
+	@updateStatusJobFinishWithErrors="update job set end=now(), jstatus=if(jstatus=99,99,4) where sys_guid=@job_token or sys_pk=@sys_pk "
 }

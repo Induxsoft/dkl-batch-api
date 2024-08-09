@@ -1,0 +1,7 @@
+id,const
+0,"Solicitado"
+1,"En proceso"
+2,"Pausado"
+3,"Terminado"
+4,"Terminado (con errores)"
+99,"Cancelado"

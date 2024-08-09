@@ -266,11 +266,11 @@ module "batch"
     {
         if isnull(db){ref db=batch.openDB()}
 
-        new p{
+        new p
+        {
            @"job_token":@@(context,"job/id")
            @"max":@@(context,"#job/steps")
         }
-
         do dbr.execute(db,@updateStatusJobFinishSuccess,p)
         ref now=now()
         new joblog
@@ -294,6 +294,7 @@ module "batch"
         {
            @"job_token":@@(context,"job/id")
         }
+        do dbr.execute(db,@updateStatusJobFinishWithErrors,p)
         ref now=now()
         new joblog
         {
@@ -546,16 +547,17 @@ module "batch"
         return dbr.str(db,sql,params)
     }
 
-    batch.return_job::&db,p
+    batch.return_job::&db,&params
     {
         sql_program = "
-            SELECT
-            job.sys_pk,
-            job.sys_guid,
-            job.jp_ref,
-            job.program,
-            job.jstatus AS `status`,
-            CASE jstatus
+        SELECT
+            j.sys_pk,
+            j.sys_recver,
+            j.sys_guid,
+            j.jp_ref,
+            j.program,
+            j.jstatus AS `status`,
+            CASE j.jstatus
                 WHEN 0 THEN 'Solicitado'
                 WHEN 1 THEN 'En proceso'
                 WHEN 2 THEN 'Pausado'
@@ -563,16 +565,39 @@ module "batch"
                 WHEN 4 THEN 'Terminado (con errores)'
                 WHEN 99 THEN 'Cancelado'
                 ELSE 'Indeterminado'
-                END status_text
-            FROM job 
-            INNER JOIN jobsgroup jg on job.jp_ref=jg.sys_pk
-            WHERE (jp_ref = @jobgroup or jg.name=@jobgroup or jg.sys_guid=@jobgroup)
-                AND program = @program
-            ORDER BY job.sys_dtcreated DESC
-            LIMIT 1
+            END status_text
+        FROM job j
+            INNER JOIN jobsgroup jg ON j.jp_ref = jg.sys_pk
+        WHERE (jg.sys_pk=@jobgroup OR jg.sys_guid=@jobgroup OR jg.name=@jobgroup)
+            AND j.program = @program
+        ORDER BY j.sys_dtcreated DESC
+        LIMIT 1
         "
+        return dbr.rec(db,sql_program,params)
+    }
 
-        return dbr.rec(db,sql_program,p)
+    batch.jobs_in_progress::&db,&params
+    {
+        sql_jobs_in_progress = "
+        SELECT
+            j.sys_pk,
+            j.sys_guid,
+            j.sys_recver,
+            j.sys_user,
+            u.username AS usuario,
+            IFNULL(DATE_FORMAT(j.start,'%Y-%m-%d %H:%i:%s'),'') finicio,
+            st.id AS istatus,
+            st.const AS sttext
+        FROM job j
+            INNER JOIN jobsgroup jg ON j.jp_ref = jg.sys_pk
+            INNER JOIN tuser u ON j.sys_user = u.userid
+            INNER JOIN job_status st ON j.jstatus = st.id
+        WHERE (jg.sys_pk=@jobgroup OR jg.sys_guid=@jobgroup OR jg.name=@jobgroup)
+            AND j.program = @program
+            AND (j.jstatus < 3 OR (j.jstatus = 4 AND j.end > DATE_ADD(NOW(),INTERVAL -1 HOUR)))
+        ORDER BY j.sys_dtcreated ASC
+        "
+        return dbr.list(db,sql_jobs_in_progress,params)
     }
 }
 

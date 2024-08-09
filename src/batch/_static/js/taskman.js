@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded",()=>{taskman.init()});
 var taskman=
 {
     program_token: "",
+    jobs_instances: 0,
     program_status: 0,
     interval_time: 0,
     progress_type: 0,
@@ -23,75 +24,131 @@ var taskman=
         taskman.content_dkl = document.getElementById("content_dkl");
         taskman.config_params = document.getElementById("config_params");
 
+        taskman.url1 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-status";
+        taskman.url2 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-log&job_token="+taskman.job;
+        taskman.url3 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-job-instances&job_token="+taskman.job;
+
+        setInterval(() => {
+            this.checkJobsInProgress();
+            // this.checkProgramStatus();
+        }, this.interval_time);
+    },
+
+    checkProgramStatus()
+    {
+        if (this.program_status >= 3) return;
+
         const spinner = document.getElementById("spinner");
         const st_text = document.getElementById("status_text");
         const program_params = document.getElementById("_program_params");
         const btn_run_program = document.getElementById("btn_run_program");
         const btn_cancel = document.getElementById("btn-cancel");
 
-        if (btn_cancel) btn_cancel.classList.add("d-none")
-
-        taskman.url1 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-status";
-        taskman.url2 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-log&job_token="+taskman.job;
-
-        if (spinner && st_text && program_params && btn_run_program && btn_cancel) {
-            setInterval(this.checkProgramStatus(spinner, st_text, program_params, btn_run_program, btn_cancel), this.interval_time);
-        }
-    },
-
-    checkProgramStatus(spinner, st_text, program_params, btn_run_program, btn_cancel)
-    {
-        if (this.program_status >= 3) return;
-
         fetch(taskman.url1).then(response => response.json())
         .then(data => {
-
-            if (data && data.status == 99) {
-                if (!btn_cancel.classList.contains("d-none")) btn_cancel.classList.add("d-none")
-            } if (data && data.status < 3) {
-                btn_cancel.classList.remove("d-none")
-            } else {
+            if (data && data.status == 99) btn_cancel.classList.add("d-none");
+            else if (data && data.status < 3) btn_cancel.classList.remove("d-none");
+            else
+            {
                 spinner.classList.add("d-none");
                 st_text.classList.add("d-none");
                 btn_run_program.disabled = false;
                 program_params.disabled = false;
                 btn_cancel.classList.add("d-none")
                 
-                if (program_params.tagName.toLowerCase() === "form") {
-                    let controls = _program_params.elements;
+                if (program_params.tagName.toLowerCase() === "form")
+                {
+                    let controls = program_params.elements;
                     for (let i = 0; i < controls.length; i++) {
                         const element = controls[i];
                         element.disabled = false;
                     }
                 }
             }
-        });
 
-        taskman.updateLogs();
+            this.program_status = data.status;
+            this.updateLogs();
+        });
     },
 
-    updateLogs()
+    checkJobsInProgress()
+    {
+        // if (this.jobs_instances <= 0) return;
+
+        const spinner = document.getElementById("spinner");
+        const stt_txt = document.getElementById("status_text");
+        const tbody = document.querySelector("#tbl_instances tbody");
+
+        fetch(taskman.url3).then(response => response.json())
+        .then(data => {
+            // this.jobs_instances = data.length;
+            let show_spinner = (data.filter(obj => obj.istatus < 3).length > 0);
+            
+            spinner.classList.toggle("d-none",!show_spinner);
+            stt_txt.classList.toggle("d-none",!show_spinner);
+
+            tbody.innerHTML = "";
+            data.forEach(job => {
+                let cells = ["sys_guid","usuario","finicio","sttext"];
+
+                const tr = document.createElement("tr");
+                cells.forEach(key => {
+                    const td = document.createElement("td");
+                    const text = document.createTextNode(job[key]);
+                    
+                    td.appendChild(text)
+                    tr.appendChild(td)
+                });
+                
+                const _actions = document.createElement("td");
+
+                if (this._user_id == job.sys_user)
+                {
+                    const _cancelar = document.createElement("button");
+                    _cancelar.classList.add("btn", "btn-sm", "btn-light", "border");
+                    _cancelar.setAttribute("onclick",`taskman.cancelTask('${job.sys_guid}')`);
+                    _cancelar.textContent = "Cancelar";
+                    _actions.appendChild(_cancelar);
+                }
+
+                tr.appendChild(_actions);
+                tbody.appendChild(tr);
+            });
+        });
+    },
+
+    updateLogs(logs=[], get=true)
     {
         const div_errors = document.getElementById("errors");
-
         if (!div_errors) return;
 
-        fetch(taskman.url2).then(response => response.json())
-        .then(data => {
-            if (data.message) {
-                console.error(data.message);
-                return;
-            }
-            
-            div_errors.innerHTML = ""; //replaceChildren();
-            
-            data.log.map(error => {
-                small = document.createElement("small");
-                small.textContent = error.note + "\n";
+        const PrintLogs = function (list,container) {
+            container.innerHTML = "";
+            list.forEach(log => {
+                const small = document.createElement("small");
                 small.style.cssText = "white-space: break-spaces;"
+                small.textContent = log.note + "\n";
+
                 div_errors.prepend(small);
-            })
-        });
+            });
+        }
+
+        if (logs.length > 0 && !get) PrintLogs(logs,div_errors);
+
+        if (get)
+        {
+            fetch(taskman.url2).then(response => response.json())
+            .then(data => {
+                let dlog = (data?.log??[]);
+
+                if (!(data?.success??true) || (data?.message??"")!=="") {
+                    let msg = { note: (data?.message ?? JSON.stringify(data)) };
+                    dlog.push(msg);
+                }
+                
+                PrintLogs([...logs,...dlog],div_errors);
+            });
+        }
     },
 
     uploadProgram()
@@ -238,25 +295,28 @@ var taskman=
         }
 
         const btn_run_program = document.getElementById("btn_run_program");
+        const spn_start_text = document.getElementById("spn_start_text");
 
         let endpoint = taskman.url.replace("{id}",taskman._entity_id)+"?run=1&progress_type="+this.progress_type+"&steps="+this.steps;
         let data = { params: params }
 
         btn_run_program.disabled = true;
+        spn_start_text.classList.remove("d-none");
+
         InduxsoftCrudlModel.InvokeService(endpoint, data,
             (data) => { window.location.reload(); },
             (error) => { alert(error.message ?? JSON.stringify(error)); },
         "PATCH", false);
     },
 
-    cancelTask()
+    cancelTask(idJob)
     {
-        let url = taskman.url.replace("{id}",taskman._entity_id)+"?_act=cancel-task&sys_guid_job="+taskman.job;
+        // let url = taskman.url.replace("{id}",taskman._entity_id)+"?_act=cancel-task&sys_guid_job="+taskman.job;
+        let url = taskman.url.replace("{id}",taskman._entity_id)+"?_act=cancel-task&sys_guid_job="+idJob;
 
         fetch(url).then(response => response.json())
-        .then(() => {
-            if (!taskman.btn_cancel.classList.contains("d-none")) taskman.btn_cancel.classList.add("d-none")
-        });
+        .then((data) => { window.location.reload() })
+        .then((error) => { alert(error.message) });
     },
 
     showModal(modalId='')

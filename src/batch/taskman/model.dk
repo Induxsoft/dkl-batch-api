@@ -37,31 +37,16 @@ module ""
                     @"jobgroup": @@(params,"$_entity_id")
                     @"program": @@(params,"$_view")
                 }
-                sql_program = "
-                SELECT
-                    job.sys_pk,
-                    job.sys_guid,
-                    job.jp_ref,
-                    job.program,
-                    job.jstatus AS `status`,
-                    CASE jstatus
-                        WHEN 0 THEN 'Solicitado'
-                        WHEN 1 THEN 'En proceso'
-                        WHEN 2 THEN 'Pausado'
-                        WHEN 3 THEN 'Terminado'
-                        WHEN 4 THEN 'Terminado (con errores)'
-                        WHEN 99 THEN 'Cancelado'
-                        ELSE 'Indeterminado'
-                    END status_text
-                FROM job 
-                INNER JOIN jobsgroup jg on job.jp_ref=jg.sys_pk
-                WHERE (jp_ref = @jobgroup or jg.name=@jobgroup or jg.sys_guid=@jobgroup)
-                    AND program = @program
-                ORDER BY job.sys_dtcreated DESC
-                LIMIT 1
-                "
-
-                return dbr.rec(db,sql_program,p)
+                return batch.return_job(db,p)
+            }
+            case "get-job-instances"
+            {
+                new p
+                {
+                    @"jobgroup": @@(params,"$_entity_id")
+                    @"program": @@(params,"$_view")
+                }
+                return batch.jobs_in_progress(db,p)
             }
             case "get-program-log"
             {
@@ -72,12 +57,14 @@ module ""
             }
             case "cancel-task"
             {
-                //token = @@(@batch_context,"$job/token")
-                new p { @"sys_guid": @@(params,"$sys_guid_job") }
-                query = "UPDATE job SET jstatus = 99 WHERE sys_guid = @sys_guid"
-
-                //do batch.saveLog(@@(p,"sys_guid"),"Trabajo cancelado.");
-                do dbr.execute(db,query,p)
+                new p
+                {
+                    @"id": @@(params,"$sys_guid_job")
+                    @"usr": @@(@http_context,"$session/user/uid")
+                }
+                
+                query = "UPDATE job SET jstatus = 99 WHERE sys_guid = @id AND sys_user = @usr"
+                if not(dbr.execute(db,query,p)) { do rise_error(511,"El trabajo solo puede ser cancelado por el propietario.") }
             }
             default
             {
@@ -164,6 +151,7 @@ module ""
 
             new data_batch
             {
+                @"owner": @@(@http_context,"$session/user/uid")
                 @"jp_ref":@@(jg,"#sys_pk")
                 @"program":@@(params,"$_view")
                 @"progress_type":@@(params,"$progress_type")
