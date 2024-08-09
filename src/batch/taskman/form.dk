@@ -49,7 +49,7 @@ module "form.dk"
                 @"template":ftext('
                 <div style="display:flex;gap:8px;justify-content: center;width:100%" class="no-print">
                     <a class="btn " href=\'#<url_detail>\' style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem;text-decoration: none;">
-                        Detalle
+                        Ejecutar
                     </a>
                     <button
                         onclick="InduxsoftCrudlModel.Delete('+@@(jobsgroup,'$sys_pk')+',\'#<url_delete>\') " style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"

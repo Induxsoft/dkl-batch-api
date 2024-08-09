@@ -102,7 +102,7 @@ var taskman=
                 
                 const _actions = document.createElement("td");
 
-                if (this._user_id == job.sys_user)
+                if (this._user_id == job.sys_user && job.istatus < 3)
                 {
                     const _cancelar = document.createElement("button");
                     _cancelar.classList.add("btn", "btn-sm", "btn-light", "border");
@@ -302,6 +302,16 @@ var taskman=
 
         btn_run_program.disabled = true;
         spn_start_text.classList.remove("d-none");
+
+        if (_program_params.tagName.toLowerCase() === "form")
+        {
+            let controls = _program_params.elements;
+            for (let i = 0; i < controls.length; i++) {
+                const element = controls[i];
+                element.disabled = true;
+            }
+        }
+        else _program_params.disabled = true;
 
         InduxsoftCrudlModel.InvokeService(endpoint, data,
             (data) => { window.location.reload(); },
