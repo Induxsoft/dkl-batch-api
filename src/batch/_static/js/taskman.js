@@ -88,8 +88,9 @@ var taskman=
             stt_txt.classList.toggle("d-none",!show_spinner);
 
             tbody.innerHTML = "";
-            data.forEach(job => {
-                let cells = ["sys_guid","usuario","finicio","sttext"];
+            data.forEach((job,irow) => {
+                let cells = ["row","sys_guid","usuario","finicio","sttext"];
+                job["row"] = (irow+1);
 
                 const tr = document.createElement("tr");
                 cells.forEach(key => {
