@@ -105,7 +105,7 @@ var taskman=
                 });
                 
                 const _actions = document.createElement("td");
-
+                //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
                 if (this._user_id == job.sys_user && job.istatus < 3)
                 {
                     const _cancelar = document.createElement("button");
@@ -114,6 +114,13 @@ var taskman=
                     _cancelar.textContent = "Cancelar";
                     _actions.appendChild(_cancelar);
                 }
+
+                const _ver_logs = document.createElement("a");
+                _ver_logs.classList.add("btn", "btn-sm", "btn-light", "border");
+                _ver_logs.href = "/!/batch/joblog/"+job.sys_pk+"/logs/";
+                _ver_logs.textContent = "Ver logs"
+                _actions.appendChild(_ver_logs);
+                //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
                 tr.appendChild(_actions);
                 tbody.appendChild(tr);

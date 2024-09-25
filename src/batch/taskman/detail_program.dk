@@ -169,6 +169,12 @@ module "form.dk"
                     #tbl_instances td:nth-child(4),
                     #tbl_instances td:nth-child(5)
                     { text-align:center; }
+                    #tbl_instances td:nth-child(6) {
+                        display:flex;
+                        justify-content:center;
+                        align-items:center;
+                        gap:.5rem;
+                    }
 
                     #tbl_instances tr th { font-size:.9rem; outline:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; -o-text-overflow:ellipsis; }
                     #tbl_instances tr td { font-size:.8rem; }
@@ -184,7 +190,7 @@ module "form.dk"
                             th(class="text-center"){$"Usuario"}
                             th(class="text-center" id="c_finicio"){$"Inicio"}
                             th(class="text-center" id="c_estado"){$"Estado"}
-                            th(class="text-center" id="c_actions"){$""}
+                            th(class="text-center" id="c_actions"){$"Acciones"}
                         }
                     }
                     tbody
@@ -207,7 +213,8 @@ module "form.dk"
                                 {$""
                                     #! if @user_id==@@(job,"$sys_user") && @@(job,"#istatus") < 3 {
                                         #$ button(class="btn btn-sm btn-light border" onclick="taskman.cancelTask('#<sys_guid>')"){"Cancelar"}
-                                    }
+                                    } #$
+                                    a(class="btn btn-sm btn-light border" href="/!/batch/joblog/#<sys_pk>/logs/"){"Ver log"}
                                 }
                             }
                             #!

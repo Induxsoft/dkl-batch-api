@@ -1,0 +1,20 @@
+#include "dkli.dkh"
+#!
+module "JoblogController"
+{
+    switch @@(@http_context,"$request/get/_view")
+    {
+        case "jobs"
+        {
+            @form_view = "batch.log.dk"
+            point @read to joblog.jobs
+            break
+        }
+        case "logs"
+        {
+            @form_view = "batch.log.detail.dk"
+            point @read to joblog.logs
+            break
+        }
+    }
+}

@@ -34,7 +34,9 @@ module "form.dk"
 
     url_delete=@BATCH_ADD_EDIT_TASKMAN+'?file=${DataRow.nameb64}'
     url_detail=replace(replace(@BATCH_DETAIL_PROG_TASKMAN,"{id}",@("$./sys_pk")),"{taskname}","${DataRow.name_file}")
+    url_executions="/!/batch/joblog/${DataRow.name}/jobs/"
 
+    tbtn_style = "cursor:pointer; text-decoration:none; border:none; outline:none; padding: 0px 8px; background-color:#F5F5F5; color:#000000;"
     new table_definition
     {
         @"datatable*": programs_jg
@@ -47,14 +49,9 @@ module "form.dk"
                 @"caption":"Acciones" 
                 @"template":ftext('
                 <div style="display:flex;gap:8px;justify-content: center;width:100%" class="no-print">
-                    <a class="btn " href=\'#<url_detail>\' style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem;text-decoration: none;">
-                        Ejecutar
-                    </a>
-                    <button
-                        onclick="InduxsoftCrudlModel.Delete('+@@(jobsgroup,'$sys_pk')+',\'#<url_delete>\') " style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"
-                    >
-                        Eliminar
-                    </button>
+                    <a href=\'#<url_detail>\' style="#<tbtn_style>">Ejecutar</a>
+                    <button onclick="InduxsoftCrudlModel.Delete('+@@(jobsgroup,'$sys_pk')+',\'#<url_delete>\') " style="#<tbtn_style>">Eliminar</button>
+                    <a href=\'#<url_executions>\' style="#<tbtn_style>">Ver ejecuciones</a>
                 </div>')
                 @"no-print":@true
             }

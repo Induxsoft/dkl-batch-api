@@ -1,0 +1,50 @@
+#include "dkli.dkh"
+#!
+module ":joblog"
+{
+    #include "batch/list_query.dk"
+
+    function jobs(&db,&params)
+    {
+        sql_jobs = "
+        SELECT
+            j.sys_pk,
+            j.sys_guid,
+            j.sys_user,
+            j.jp_ref,
+            IFNULL(DATE_FORMAT(j.start,'%Y-%m-%d %H:%i:%s'),'') start,
+            IFNULL(DATE_FORMAT(j.end,'%Y-%m-%d %H:%i:%s'),'') end,
+            j.program,
+            j.params,
+            u1.username AS usuario,
+            st.id AS istatus,
+            st.const AS cstatus
+        FROM job j
+            INNER JOIN job_status st ON j.jstatus = st.id
+            INNER JOIN tuser u1 ON j.sys_user = u1.userid
+        WHERE j.program = @_entity_id
+        ORDER BY j.sys_dtcreated ASC
+        "
+        
+        new data
+        {
+            @"entity*": @null
+            @"jobs*": dbr.list(db,sql_jobs,params)
+        }
+
+        return data
+    }
+    
+    function logs(&db,&params)
+    {
+        params<"sys_pk"> : @@(params,"$_entity_id")
+        
+        new data
+        {
+            @"entity*": dbr.rec(db,@get_dataJobStatus,params)
+            @"logs*": dbr.list(db,@get_dataJobLog,params)
+        }
+
+        return data
+    }
+}

@@ -1,0 +1,178 @@
+#include "dkli.dkh"
+#!
+module "form.dk"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "uielements.v12.dkl"
+
+    do @context.begin(@crud_context)
+
+    ref entity = ifnull(@("&./entity"),record.create())
+    ref logs = ifnull(@("&./logs"),list.create())
+    ref titles = ifnull(@("&./titles"),record.create())
+
+	@_entities_type = @("$parameters/_entities_type")
+	@_entity_id = @("$parameters/_entity_id")
+
+    urlexit = "/!/batch/taskman/"+@@(entity,"$jp_ref")+"/"+@@(entity,"$program")+"/"
+    table_id = "tbl_logs"
+    program_name = @@(entity,"$program")
+    program_status = @@(entity,"#status")
+    program_status_text = @@(entity,"$status_text")
+
+    new nav_config
+    {
+        @"title": program_name
+        @"urlexit": "javascript:window.history.back();" //urlexit
+        @"print_mode": 0 // 0-window.print() | 1-v12PrintHTML()
+    }
+    // Encapsula a la vista en su totalidad, todo lo que hay antes o después no se considera 
+    #$
+    div(class="container-lg" id="view")
+    {
+        // Filtros y acciones
+        section(id="top_area")
+        {
+            #!
+            do uie.printV12FormBar(nav_config)
+            #$
+        }
+        // Contenido principal
+        section(id="work_area" style="overflow-y:auto; overflow-x:hidden;")
+        {
+            style
+            {$'
+                ##<table_id> td:nth-child(1),
+                ##<table_id> td:nth-child(2)
+                { text-align:center; }
+
+                ##<table_id> tr th { font-size:.9rem; outline:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; -o-text-overflow:ellipsis; }
+                ##<table_id> tr td { font-size:.8rem; }
+            '}
+
+            div(class="show-on-print")
+            {
+                p(class="text-center my-0"){$"#<@@(titles,'$title')>"}
+                p(class="text-center my-0"){$"#<@@(titles,'$subtitle')>"}
+                p(class="text-center my-0"){$"#<@@(titles,'$subtitle_2')>"}
+
+                div(class="row")
+                {
+                    div(class="col-3 text-start")
+                    {
+                        small(class="d-block"){ $"#<cut(@('$http/session/user/name'),25)>" }
+                        small(class="d-block"){ $"#<date_str(now(),'dd/MMM/yyyy')>" }
+                    }
+                    div(class="col-6 text-center")
+                    {
+                        h4(class=""){$"#<program_name> [Bitácora]"}
+                    }
+                    div(class="col-3 text-end")
+                    {
+                        small(class="d-block" id="lbl_filter_1"){$""}
+                        small(class="d-block" id="lbl_filter_2"){$""}
+                        small(class="d-block" id="lbl_filter_3"){$""}
+                    }
+                }
+            }
+
+            div(class="")
+            {
+                table(class="table table-sm table-bordered table-hover" id="#<table_id>")
+                {
+                    thead
+                    {
+                        tr(class="bg-light-gray")
+                        {
+                            th(class="text-center"){$"#"}
+                            th(class="text-center"){$"Creado"}
+                            th(class="text-center"){$"Nota"}
+                        }
+                    }
+                    tbody
+                    {
+                        #!
+                        for i = 0; i < list.count(logs); i+1
+                        {
+                            ref log = list.obj(logs,i)
+                            #$
+                            tr
+                            {
+                                td(class=""){$"#<i+1>"}
+                                td(class=""){$"#<@@(log,'$createdAt')>"}
+                                td(class=""){$"#<@@(log,'$note')>"}
+                            }
+                            #!
+                        }
+                        #$
+                    }
+                }
+            }
+
+            div(class="show-on-print"){p(class="fixed-bottom text-center my-1"){$"#<@@(titles,'$footer')>"}}
+        }
+        // Resúmenes y datos al pie
+        section(id="bottom_area"){$""}
+
+        //////////////////////////////////////////////////////////////////
+        div(id="_custom_area")
+        {
+            // script(src=""){$""}
+            script(type="text/javascript")
+            {$'
+                document.addEventListener("DOMContentLoaded", () => {
+                    function print_logs() {
+                        const tbody = document.querySelector("#tbl_logs tbody");
+                        let rows = tbody.getElementsByTagName("tr");
+                        let lrow = rows[rows.length - 1];
+                        
+                        let last_index = Number(lrow.getElementsByTagName("td")[0].textContent)
+                        let last_created = lrow.getElementsByTagName("td")[1].textContent;
+
+                        fetch("./?f="+last_created).then(response => response.json())
+                        .then(data => {
+                            if (data.message) {
+                                alert(data.message);
+                                return;
+                            }
+                            
+                            if (data.entity.status >= 3) window.location.reload();
+                            else
+                            {
+                                data.logs.forEach(log => {
+                                    let cells = ["row","createdAt","note"];
+                                    last_index += 1;
+                                    log["row"] = last_index;
+
+                                    const tr = document.createElement("tr");
+                                    cells.forEach(key => {
+                                        const td = document.createElement("td");
+                                        const text = document.createTextNode(log[key]);
+                                        
+                                        td.appendChild(text)
+                                        tr.appendChild(td)
+                                    });
+                                    tbody.appendChild(tr);
+                                });
+                            }
+                        })
+                        .catch(error => { console.log(error.message ?? JSON.stringify(error)) });
+                    }
+
+                    // if (#<program_status> < 3) {
+                    //     setInterval(() => {
+                    //         print_logs();
+                    //     }, 3000);
+                    // }
+
+                    //:::::::::::::::::::::::::::: Script injection
+                    #<@@(@crud_context,"script")>
+                });
+            '}
+        }
+    }
+    #!
+    
+    do @context.end()
+}
