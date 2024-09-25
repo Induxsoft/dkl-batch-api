@@ -3,9 +3,10 @@ document.addEventListener("DOMContentLoaded",()=>{taskman.init()});
 
 var taskman=
 {
+    program_name: "",
     program_token: "",
-    jobs_instances: 0,
     program_status: 0,
+    jobs_instances: 0,
     interval_time: 0,
     progress_type: 0,
     steps: 0,
@@ -28,10 +29,12 @@ var taskman=
         taskman.url2 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-program-log&job_token="+taskman.job;
         taskman.url3 = taskman.url.replace("{id}",taskman._entity_id)+"?_act=get-job-instances&job_token="+taskman.job;
 
-        setInterval(() => {
-            this.checkJobsInProgress();
-            // this.checkProgramStatus();
-        }, this.interval_time);
+        if (this.program_name != "") {
+            setInterval(() => {
+                this.checkJobsInProgress();
+                // this.checkProgramStatus();
+            }, this.interval_time);
+        }
     },
 
     checkProgramStatus()

@@ -1,6 +1,6 @@
 #include "dkli.dkh"
 #!
-module ""
+module "Administrador de tareas"
 {
     #include "../batch.local.dkh"
 
@@ -15,6 +15,7 @@ module ""
         exception{}
         return @false
     }
+
     taskman.exist.file::groupid,name_file
     {
         ref programas=batch.list_programs(groupid)
@@ -24,6 +25,20 @@ module ""
             if file.justname(file)==file.justname(name_file){return @true}
         }
         return @false
+    }
+
+    taskman.list::&db,&params
+    {
+        do dbr.apps.action.grant("XA30")
+        return entity.list(db,params)
+        exception
+        {
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
 
     taskman.read::&db,&params
@@ -68,7 +83,16 @@ module ""
             }
             default
             {
+                do dbr.apps.action.grant("XA30")
                 return entity.read(db,params)
+                exception
+                {
+                    do errordet(@false)
+                    code = last_error_code()
+                    error = last_error()
+                    do dbr.apps.action.log()
+                    do rise_error(code,error)
+                }
             }
         }
     }
@@ -123,18 +147,22 @@ module ""
 
     taskman.save::&db,&params,&data
     {
-        ref  jg=dbr.rec(db,"select sys_pk,sys_guid from jobsgroup where sys_pk=@_entity_id",params)
+        ref jg=dbr.rec(db,"select sys_pk,sys_guid from jobsgroup where sys_pk=@_entity_id",params)
         if isnull(jg){do rise_error(500,"No se encontró datos del grupo indicado")}
         base_path_jg=path.concat(@batch_base_path,@@(jg,"$sys_guid"))
         
         ref @batchDB=db //inicializar la bd, para el uso de las funciones batch
         params<"sys_guid">:@@(jg,"$sys_guid")
+
         if field.exist(params,"upload")
         {
+            do dbr.apps.action.grant("XA31")
             return taskman.upload(db,params,data)
         }
         else if field.exist(params,"create")
         {
+            do dbr.apps.action.grant("XA32")
+
             name_program=limpiarTexto(@@(data,"$name_program"))
             if file.extension(name_program)==""{name_program=name_program+".dkl"}
 
@@ -163,25 +191,45 @@ module ""
         }
 
         return jg
+
+        exception
+        {
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            if isset("@@_action_context") { do dbr.apps.action.log() }
+            do rise_error(code,error)
+        }
     }
 
     taskman.delete::&db,&params
     {
-        ref  jg=dbr.rec(db,"select sys_guid from jobsgroup where sys_pk=@_entity_id",params)
+        do dbr.apps.action.grant("XA33")
+
+        ref jg=dbr.rec(db,"select sys_guid from jobsgroup where sys_pk=@_entity_id",params)
         if isnull(jg){do rise_error(500,"No se encontró datos del grupo indicado")}
-        
-       base_path_jg=path.concat(@batch_base_path,@@(jg,"$sys_guid"))
-       file=url_dcode(@@(params,"$file"))
-       path_file=path.concat(base_path_jg,file)
 
-       if not(file.exists(path_file)){do rise_error(500,"No se encontró el programa indicado")}
+        base_path_jg=path.concat(@batch_base_path,@@(jg,"$sys_guid"))
+        file=url_dcode(@@(params,"$file"))
+        path_file=path.concat(base_path_jg,file)
 
+        if not(file.exists(path_file)){do rise_error(500,"No se encontró el programa indicado")}
         do batch.removeTask(@@(jg,"$sys_guid"),file)
+
+        exception
+        {
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
     
     point @delete to taskman.delete
     point @update to taskman.save
     point @read to taskman.read
+    point @list to taskman.list
 
     ref @create = @null
 

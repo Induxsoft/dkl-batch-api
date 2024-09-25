@@ -46,8 +46,8 @@ module "modals"
                 }
                 div(class="modal-footer" id="ftrAddClt")
                 {
-                    button(type="button" id="btn_mdl_borrador" class="btn btn-sm m-1 induxsoft-corners border-secondary btn-main-action" "data-dismiss"="modal" onclick="taskman.cretePrograma();") { "Crear"}
-                    button(type="button" class="btn btn-sm m-1 induxsoft-corners border-secondary btn-main-action" "data-bs-dismiss"="modal") { "Cerrar"}
+                    button(type="button" id="btn_mdl_borrador" class="btn btn-sm m-1 induxsoft-corners border-secondary btn-main-action" "data-dismiss"="modal" onclick="taskman.cretePrograma();") {"Crear"}
+                    button(type="button" class="btn btn-sm m-1 induxsoft-corners border-secondary btn-main-action" "data-bs-dismiss"="modal") {"Cerrar"}
                 }
             }
         }		

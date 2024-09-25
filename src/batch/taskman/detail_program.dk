@@ -87,7 +87,6 @@ module "form.dk"
     div(class="container p-0")
     {
         link(href="#<@CSS_BATCH>" rel="stylesheet")
-        script(src="#<@JS_TASKMAN>"){""}
 
         div(id="main_bar" class="row container-section my-2 px-0 py-2 border-bottom")
         {
@@ -237,13 +236,15 @@ module "form.dk"
         //         }
         //     }
         // }
-
         #$
+
+        script(src="#<@JS_TASKMAN>"){""}
         script
-        {$' 
+        {$'
             taskman.url="#<replace(@BATCH_DETAIL_PROG_TASKMAN,"{taskname}",program)>";
             taskman._entity_id = #<@("#./sys_pk")>;
             taskman._user_id = "#<@user_id>";
+            taskman.program_name = "#<text_program>";
             taskman.program_token = "#<program_token>";
             taskman.program_status = #<program_status>;
             taskman.jobs_instances = #<jobs_instances>;

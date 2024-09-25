@@ -1,6 +1,5 @@
 #include "dkli.dkh"
 #!
-
 module "form.dk"
 {
     #include "functions.dkh"
@@ -67,7 +66,7 @@ module "form.dk"
         #!
         #include "taskman.modal.dk"
         #$
-        script(src="#<@JS_TASKMAN>"){""}
+        
         div(id="main_bar" class="row container-section my-2 px-0 py-2 border-bottom")
         {
             div(class="col-4 d-flex align-items-center p-0")
@@ -93,8 +92,11 @@ module "form.dk"
         label("for"="file_program" class="btn btn-sm m-1 induxsoft-corners border-secondary btn-main-action" onclick=""){"Subir programa"}
         button(class="btn btn-sm m-1 induxsoft-corners border-secondary btn-main-action" onclick="taskman.showModal('mdl_create_program');"){"Crear programa"}
 
-        #! do uie.dbeditable(table_definition, "tbl_admin_jobsgroup")
+        #!
+        do uie.dbeditable(table_definition, "tbl_admin_jobsgroup")
         #$
+        
+        script(src="#<@JS_TASKMAN>"){""}
         script
         {
             $'
