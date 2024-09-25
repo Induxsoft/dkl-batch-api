@@ -1,0 +1,17 @@
+﻿itemid,description,itemparent
+batch,Procesamiento por lotes,\0
+batch.crontask,Programador de tareas,batch
+XA10,Tareas programadas,batch.crontask
+XA11,Crear tarea programada,batch.crontask
+XA12,Editar tarea programada,batch.crontask
+XA13,Eliminar tarea programada,batch.crontask
+batch.jobsgroup,Grupos de tareas,batch
+XA20,Grupos de tareas,batch.jobsgroup
+XA21,Crear grupo de tareas,batch.jobsgroup
+XA22,Editar grupo de tareas,batch.jobsgroup
+XA23,Eliminar grupo de tareas,batch.jobsgroup
+batch.taskman,Administrador de tareas,batch
+XA30,Administrador de tareas,batch.taskman
+XA31,Subir programa,batch.taskman
+XA32,Crear programa,batch.taskman
+XA33,Eliminar programa,batch.taskman

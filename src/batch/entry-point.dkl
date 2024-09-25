@@ -1,11 +1,14 @@
 #include "dkli.dkh"
 #!
-
 module "Controller configs"
 {
 	#include "functions.dkh"
 	#include "serialize.dkh"
 	#include "dbr.dkh"
+	#include "dbr.apps.dkl"
+	#include "dbr.vars.dkl"
+	#include "dbr.security.dkl"
+	#include "dbr.events.dkl"
 	#include "crudl/crudl.dk"
 	#include "batch.config.dkl"
 	#include "batch.local.dkh"
@@ -56,15 +59,14 @@ module "Controller configs"
     // GET url="/!/batch/jobs/?job_token=&log="
     // POST url="/!/batch/jobs/?job_token=&action="
 
-    
-
 	if not(crudl.route("/jobs/"))
 	{
-		if @@(@http_context,"$session/user/ids") == ""
-		{
-			@http_context<"response/headers/location"> : "/"
+		if @@(@http_context,"$session/user/ids") == "" {
+			if file.exists("webshell/lost.dk") { include "webshell/lost.dk" }
+			else { @http_context<"response/headers/location"> : "/" }
 			return
 		}
+
 		#include "crudl/controller.dkl"
 	}
 	else

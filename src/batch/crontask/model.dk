@@ -1,7 +1,6 @@
 #include "dkli.dkh"
 #!
-
-module "model"
+module "Programador de tareas"
 {
     @table_name = "crontask"
     @list_query = "
@@ -29,97 +28,130 @@ module "model"
     ORDER BY ct.id
     "
 
-    function crontask_create(&db, &params, &data)
+    function prepareView(&db,&params,&data)
     {
-        data<"last_cycle">: @@(data,"start")
-        data<"sys_guid">: uuid()
+        query = "SELECT sys_pk, name FROM jobsgroup"
+        data<"listJobsgroup*"> : dbr.list(db, query, @null)
+        return data
+    }
 
-        if @@(data, "finish") == "" {
-            data<"finish*">: @null
+    function crontask_list(&db,&params)
+    {
+        do dbr.apps.action.grant("XA10")
+        return entity.list(db,params)
+        exception{ do catch(db,params,@null) }
+    }
+
+    function crontask_read(&db,&params)
+    {
+        do dbr.apps.action.grant("XA10")
+
+        if @@(params, "idGroup") != "" {
+            idGroup = @@(params, "idGroup")
+            ref programs = getPrograms(db,idGroup)
+            return programs
         }
 
-        query = "
+        ref data = entity.read(db,params)
+        do prepareView(db,params,data)
+        return data
+
+        exception{ do catch(db,params,@null) }
+    }
+
+    function crontask_blank(&db,&params)
+    {
+        do dbr.apps.action.grant("XA10")
+
+        if @@(params, "idGroup") != "" {
+            idGroup = @@(params, "idGroup")
+            ref programs = getPrograms(db,idGroup)
+            return programs
+        }
+
+        new data {}
+        do prepareView(db,params,data)
+        return data
+
+        exception{ do catch(db,params,@null) }
+    }
+
+    function crontask_create(&db,&params,&data)
+    {
+        @use_transaction = @false
+
+        do dbr.apps.action.pre("XA11")
+        do dbr.begin(db)
+
+        data<"sys_guid"> : uuid()
+        data<"last_cycle"> : @@(data,"start")
+        if @@(data, "finish") == "" {
+            data<"finish*"> : @null
+        }
+
+        /* query = "
             INSERT INTO crontask
             (sys_recver, sys_guid, sys_timestamp, id, tag, jobsgroup, program, params, frequency, `every`, `for`, `start`, last_cycle, `finish`, disabled)
             VALUES (0, @sys_guid, now(), @id, @tag, @jobsgroup, @program, @params, @frequency, @every, @for, @start, @last_cycle, @finish, @disabled)
         "
+        do dbr.execute(db, query, data) */
+        ref result = entity.create(db,params,data)
 
-        do dbr.execute(db, query, data)
+        do dbr.apps.action.pos(result)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(result)
 
-        exception 
-        {
-            do prepare_view(db, data)
+        return result
 
-            code = last_error_code()
-            error = last_error()
-
-            if contains(error,"Duplicate entry") {
-                error = "Entrada duplicada, ya existe una tarea registrada con ese nombre."
-            }
-
-            do rise_error(code,error)
-        }
+        exception{ do catch(db,params,data) }
     }
 
-    function crontask_update(&db, &params, &data)
+    function crontask_update(&db,&params,&data)
     {
-        data<"last_cycle">: @@(data,"start")
-        data<"_entity_id">: @@(params,"_entity_id")
+        @use_transaction = @false
 
+        do dbr.apps.action.pre("XA12")
+        do dbr.begin(db)
+
+        // data<"_entity_id"> : @@(params,"_entity_id")
+        data<"last_cycle"> : @@(data,"start")
         if @@(data, "finish") == "" {
-            data<"finish*">: @null
+            data<"finish*"> : @null
         }
 
-        query = "
+        /* query = "
             UPDATE crontask
             SET sys_timestamp = now(), id = @id, tag = @tag, jobsgroup = @jobsgroup, program = @program, params = @params, frequency = @frequency, `every` = @every, `for` = @for, `start` = @start, last_cycle = @last_cycle, `finish` = @finish, disabled = @disabled
             WHERE sys_pk = @_entity_id
         "
+        do dbr.execute(db, query, data) */
+        ref result = entity.update(db,params,data)
 
-        do dbr.execute(db, query, data)
+        do dbr.apps.action.pos(result)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(result)
 
-        exception 
-        {
-            do prepare_view(db, data)
-            do rise_error(0, last_error())
-        }
+        return result
+
+        exception{ do catch(db,params,data) }        
     }
 
-    function crontask_delete(&db, &params)
+    function crontask_delete(&db,&params)
     {
-        do entity.delete(db, params)
+        @use_transaction = @false
 
-        exception {}
+        do dbr.apps.action.pre("XA13")
+        do dbr.begin(db)
+
+        ref result = entity.delete(db,params)
+
+        do dbr.apps.action.pos(result)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(result)
 
         return @true
-    }
 
-    function crontask_read(&db, &params)
-    {
-        if @@(params, "idGroup") != "" {
-            idGroup = @@(params, "idGroup")
-            ref programs = getPrograms(db,idGroup)
-            return programs
-        }
-
-        ref res = entity.read(db, params)
-        do prepare_view(db, res)
-
-        return res
-    }
-
-    function crontask_blank(&db, &params)
-    {
-        if @@(params, "idGroup") != "" {
-            idGroup = @@(params, "idGroup")
-            ref programs = getPrograms(db,idGroup)
-            return programs
-        }
-        
-        new res {}
-        do prepare_view(db, res)
-
-        return res
+        exception{ do catch(db,params,@null) }
     }
 
     function getPrograms(&db, idGroup)
@@ -139,16 +171,35 @@ module "model"
         return programs_jg
     }
 
-    function prepare_view(&db, &res)
+    catch::&db,&params,&data
     {
-        query = "SELECT sys_pk, name FROM jobsgroup"
-        res<"listJobsgroup*">: dbr.list(db, query, @null)
-        return res
+        //#region catch
+        do errordet(@false)
+        code = last_error_code()
+        error = last_error()
+
+        if dbr.in_transaction(db) { do dbr.rollback(db) }
+        if isset("@@_action_context") { do dbr.apps.action.log() }
+
+        if @@(params,"$_operation")=="create" || @@(params,"$_operation")=="update"
+        {
+            if isnull(data) { ref data:record.create() }
+            if contains(error,"Duplicate entry") { error = "Entrada duplicada, ya existe una tarea registrada con ese nombre." }
+
+            // ref FormData = record.copy(data,"*")
+            // do record.clear(data)
+            // data<"form*"> : FormData
+            
+            do prepareView(db,params,data)
+        }
+        
+        do rise_error(code,error)
     }
 
+    point @list to crontask_list
+    point @read to crontask_read
+    point @blank to crontask_blank
     point @create to crontask_create
     point @update to crontask_update
-    point @read to crontask_read
     point @delete to crontask_delete
-    point @blank to crontask_blank
 }
