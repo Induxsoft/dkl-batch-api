@@ -3,4 +3,9 @@
 module ""
 {
     if @@(params,"$_view")!=""{@form_view="detail_program.dk"}
+
+    if not(isnull(@@(@http_context,"&request/files"))) && field.exist(params,"upload")
+    {
+        point @create to taskman.save
+    }
 }
