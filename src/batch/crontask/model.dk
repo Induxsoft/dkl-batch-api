@@ -119,13 +119,13 @@ module "Programador de tareas"
             data<"finish*"> : @null
         }
 
-        /* query = "
+        query = "
             UPDATE crontask
             SET sys_timestamp = now(), id = @id, tag = @tag, jobsgroup = @jobsgroup, program = @program, params = @params, frequency = @frequency, `every` = @every, `for` = @for, `start` = @start, last_cycle = @last_cycle, `finish` = @finish, disabled = @disabled
             WHERE sys_pk = @_entity_id
         "
-        do dbr.execute(db, query, data) */
-        ref result = entity.update(db,params,data)
+        do dbr.execute(db, query, data) 
+        ref result = data
 
         do dbr.apps.action.pos(result)
         do dbr.commit(db)
