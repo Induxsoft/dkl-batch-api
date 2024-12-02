@@ -23,7 +23,8 @@ module ":joblog"
             INNER JOIN job_status st ON j.jstatus = st.id
             LEFT JOIN tuser u1 ON j.sys_user = u1.userid
         WHERE j.program = @_entity_id
-        ORDER BY j.sys_dtcreated ASC
+        ORDER BY j.sys_dtcreated DESC
+        LIMIT 250
         "
         
         new data
