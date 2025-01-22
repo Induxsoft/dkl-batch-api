@@ -89,6 +89,9 @@ module "Programador de tareas"
             data<"finish*"> : @null
         }
 
+        if parse.bool(@@(data,"disabled")){data<"disabled">:1}
+        else{data<"disabled">:0}
+
         query = "
             INSERT INTO crontask
             (sys_recver, sys_guid, sys_timestamp, id, tag, jobsgroup, program, params, frequency, `every`, `for`, `start`, last_cycle, `finish`, disabled)
@@ -113,11 +116,14 @@ module "Programador de tareas"
         do dbr.apps.action.pre("XA12")
         do dbr.begin(db)
 
-        // data<"_entity_id"> : @@(params,"_entity_id")
+        data<"_entity_id"> : @@(params,"_entity_id")
         data<"last_cycle"> : @@(data,"start")
         if @@(data, "finish") == "" {
             data<"finish*"> : @null
         }
+
+        if parse.bool(@@(data,"disabled")){data<"disabled">:1}
+        else{data<"disabled">:0}
 
         query = "
             UPDATE crontask
