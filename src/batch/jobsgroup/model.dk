@@ -71,6 +71,8 @@ module "Grupos de tareas"
         do dbr.apps.action.pre("XA22")
         do dbr.begin(db)
 
+        do dbr.execute(db,"update jobsgroup set sys_recver=0 where sys_recver is null",@null)
+        
         if (@@(data,"newPwd") == "true") {
             data<"apikey"> : toupper(md5(@@(data,"apikey")))
             do field.remove(data,"newPwd")
