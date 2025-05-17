@@ -257,6 +257,7 @@ var taskman=
                     frmFiles.append(el.name, file);
                     fileCount++
                 }
+                if (el.type === "checkbox") fd[el.name] = (el.checked) ? "on" : "";
                 else fd[el.name] = el.value;
             }
             

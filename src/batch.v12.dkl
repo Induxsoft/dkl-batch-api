@@ -1,6 +1,51 @@
 #include "dkli.dkh"
 #!
-module ""
+module ":batch.v12"
 {
     #include "batch/batch.local.dkh"
+    
+    /*
+    * batch.v12.grant(action)
+    * 
+    * -- Inclusiones necesarias --
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "dbr.apps.dkl"
+    #include "dbr.security.dkl"
+    */
+    function grant(action)
+    {
+        ref db = @@(@batch_context,"&database")
+        ref jb = @@(@batch_context,"&job")
+        qn = @@(@batch_context,"$qname")
+
+        // Recuperar ids del usuario que ejecuta la tarea
+        user_ids = dbr.str(db,"SELECT ss.sys_guid FROM job jb INNER JOIN tuser tu ON tu.userid = jb.sys_user INNER JOIN sys_session ss ON ss.iuser = tu.sys_pk WHERE jb.sys_guid = @token AND NOT IFNULL(ss.sys_deleted,0) LIMIT 1;",jb)
+        if user_ids != "" { ref db:dbr.reconnect(qn,user_ids) }
+        // Emular estructura @http_context necesaria para validar la acción
+        new @http_context
+        {
+            member "request"
+            {
+                @"get*": @@(@batch_context,"&params")
+                @"post*": record.create()
+                @"post_string": "{}"
+            }
+            member "session"
+            {
+                member "idp"
+                {
+                    @"name": "db_idp_v12"
+                    @"qname": qn
+                    @"database*": db
+                }
+            }
+        }
+        // Conceder acción
+        do dbr.apps.action.grant(action)
+        
+        @batch_context<"database*"> : db
+        ref @batchDB = db
+    }
 }
