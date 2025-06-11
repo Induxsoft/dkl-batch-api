@@ -56,15 +56,18 @@ var taskman=
                 spinner.classList.add("d-none");
                 st_text.classList.add("d-none");
                 btn_run_program.disabled = false;
-                program_params.disabled = false;
                 btn_cancel.classList.add("d-none")
                 
-                if (program_params.tagName.toLowerCase() === "form")
+                if (program_params)
                 {
-                    let controls = program_params.elements;
-                    for (let i = 0; i < controls.length; i++) {
-                        const element = controls[i];
-                        element.disabled = false;
+                    program_params.disabled = false;
+                    if (program_params.tagName.toLowerCase() === "form")
+                    {
+                        let controls = program_params.elements;
+                        for (let i = 0; i < controls.length; i++) {
+                            const element = controls[i];
+                            element.disabled = false;
+                        }
                     }
                 }
             }
@@ -238,7 +241,7 @@ var taskman=
         const _program_params = document.getElementById("_program_params");
         let params = "";
 
-        if (_program_params.tagName.toLowerCase() === "form")
+        if (_program_params && _program_params.tagName.toLowerCase() === "form")
         {
             if (!_program_params.reportValidity()) return;
 
@@ -289,7 +292,7 @@ var taskman=
 
             params = JSON.stringify(fd);
         }
-        else
+        else if (_program_params)
         {
             if (_program_params.value.trim() != "")
             {
@@ -315,7 +318,7 @@ var taskman=
         btn_run_program.disabled = true;
         spn_start_text.classList.remove("d-none");
 
-        if (_program_params.tagName.toLowerCase() === "form")
+        if (_program_params && _program_params.tagName.toLowerCase() === "form")
         {
             let controls = _program_params.elements;
             for (let i = 0; i < controls.length; i++) {
@@ -323,7 +326,7 @@ var taskman=
                 element.disabled = true;
             }
         }
-        else _program_params.disabled = true;
+        else if (_program_params) _program_params.disabled = true;
 
         InduxsoftCrudlModel.InvokeService(endpoint, data,
             (data) => { window.location.reload(); },

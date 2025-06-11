@@ -132,17 +132,17 @@ module "form.dk"
                 do dbr.control.GenerateHtml(db,definition)
             }
         }
-        else
-        {
-            #$
-            textarea(
-                class="induxsoft-form-control"
-                id="_program_params"
-                rows="10"
-                placeholder="{\r\n\t\"clave\":\"valor\"\r\n}"
-                "#<ifstr(@enable_controls,'','disabled')>"=""
-            ){$""}
-        }
+        // else
+        // {
+        //     #$
+        //     textarea(
+        //         class="induxsoft-form-control"
+        //         id="_program_params"
+        //         rows="10"
+        //         placeholder="{\r\n\t\"clave\":\"valor\"\r\n}"
+        //         "#<ifstr(@enable_controls,'','disabled')>"=""
+        //     ){$""}
+        // }
         #$
 
         div(class="d-flex align-items-center gap-2 mt-3")
