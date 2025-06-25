@@ -39,7 +39,7 @@ module "form.dk"
         exit_url_encode = url_dcode(exit_url_encode)
     } else {
         refresh_url = "./"
-        exit_url_encode = replace(@BATCH_ADD_EDIT_TASKMAN,'{id}',@('$./sys_pk'))
+        exit_url_encode = replace(@BATCH_ADD_EDIT_TASKMAN,'{id}',@('$./sys_guid'))
     }
     
     ref files = batch.list_programs(@@(jobsgroup,"$sys_guid"))
@@ -62,7 +62,26 @@ module "form.dk"
     }
 
     ref dtProgram = batch.return_job(db,p)
-    ref jbInstances = batch.jobs_in_progress(db,p)
+    ref jbInstances = dbr.list(db,"
+        SELECT
+            j.sys_pk,
+            j.sys_guid,
+            j.sys_recver,
+            j.sys_user,
+            u.username AS usuario,
+            IFNULL(DATE_FORMAT(j.start,'%Y-%m-%d %H:%i:%s'),'') finicio,
+            st.id AS istatus,
+            st.const AS sttext
+        FROM job j
+            INNER JOIN jobsgroup jg ON j.jp_ref = jg.sys_pk
+            INNER JOIN tuser u ON j.sys_user = u.userid
+            INNER JOIN job_status st ON j.jstatus = st.id
+        WHERE (jg.sys_pk=@jobgroup OR jg.sys_guid=@jobgroup OR jg.name=@jobgroup)
+            AND j.program = @program
+            AND (j.jstatus <= 3 OR (j.jstatus = 4 AND j.end > DATE_ADD(NOW(),INTERVAL -1 HOUR)))
+        ORDER BY j.sys_dtcreated DESC
+        LIMIT 10
+    ",p)
 
     jobs_instances = list.count(jbInstances)
     jobs_in_progress = 0
@@ -249,7 +268,7 @@ module "form.dk"
         script
         {$'
             taskman.url="#<replace(@BATCH_DETAIL_PROG_TASKMAN,"{taskname}",program)>";
-            taskman._entity_id = #<@("#./sys_pk")>;
+            taskman._entity_id = "#<@("$./sys_guid")>";
             taskman._user_id = "#<@user_id>";
             taskman.program_name = "#<text_program>";
             taskman.program_token = "#<program_token>";

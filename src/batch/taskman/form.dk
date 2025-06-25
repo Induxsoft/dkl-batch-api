@@ -33,7 +33,7 @@ module "form.dk"
     }
 
     url_delete=@BATCH_ADD_EDIT_TASKMAN+'?file=${DataRow.nameb64}'
-    url_detail=replace(replace(@BATCH_DETAIL_PROG_TASKMAN,"{id}",@("$./sys_pk")),"{taskname}","${DataRow.name_file}")
+    url_detail=replace(replace(@BATCH_DETAIL_PROG_TASKMAN,"{id}",@("$./sys_guid")),"{taskname}","${DataRow.name_file}")
     url_executions="/!/batch/joblog/${DataRow.name}/jobs/"
 
     tbtn_style = "cursor:pointer; text-decoration:none; border:none; outline:none; padding: 0px 8px; background-color:#F5F5F5; color:#000000;"
@@ -50,7 +50,7 @@ module "form.dk"
                 @"template":ftext('
                 <div style="display:flex;gap:8px;justify-content: center;width:100%" class="no-print">
                     <a href=\'#<url_detail>\' style="#<tbtn_style>">Ejecutar</a>
-                    <button onclick="InduxsoftCrudlModel.Delete('+@@(jobsgroup,'$sys_pk')+',\'#<url_delete>\') " style="#<tbtn_style>">Eliminar</button>
+                    <button onclick="InduxsoftCrudlModel.Delete(\''+@@(jobsgroup,'$sys_guid')+'\',\'#<url_delete>\')" style="#<tbtn_style>">Eliminar</button>
                     <a href=\'#<url_executions>\' style="#<tbtn_style>">Ver ejecuciones</a>
                 </div>')
                 @"no-print":@true
@@ -98,7 +98,7 @@ module "form.dk"
         {
             $'
             taskman.url="#<@BATCH_ADD_EDIT_TASKMAN>";
-            taskman._entity_id=#<@("#./sys_pk")>;
+            taskman._entity_id="#<@("$./sys_guid")>";
             '
         }
     }

@@ -3,15 +3,23 @@
 module "Grupos de tareas"
 {
     @table_name = "jobsgroup"
+    @keyfield = "sys_guid"
+    
     @list_query = "
-        SELECT jg.sys_pk, jg.name, jg.apikey
-        FROM jobsgroup AS jg
-        WHERE IF(IFNULL(@s,'')='', true, (jg.name LIKE CONCAT('%',@s,'%') OR jg.apikey LIKE CONCAT('%',@s,'%'))) AND IFNULL(jg.sys_deleted,0) = 0 ORDER BY jg.name
+    SELECT
+        jg.sys_pk,
+        jg.sys_guid,
+        jg.name,
+        jg.apikey
+    FROM jobsgroup AS jg
+    WHERE IFNULL(jg.sys_deleted,0) = 0
+        AND IF(IFNULL(@s,'')='', true, (jg.name LIKE CONCAT('%',@s,'%') OR jg.apikey = @s))
+    ORDER BY jg.name
     "
 
     function prepareView(&db,&params,&data)
     {
-        query = "SELECT sys_pk, name, apikey FROM jobsgroup"
+        query = "SELECT sys_pk, sys_guid, name, apikey FROM jobsgroup"
         data<"jobsgroup*"> : dbr.list(db, query, @null)
         return data
     }

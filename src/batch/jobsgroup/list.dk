@@ -22,22 +22,22 @@ module "list"
         {
             member @"name" { @"caption":"Nombre" }
             member @"_actions" 
-            { 
+            {
                 @"caption":"Acciones" 
                 @"template":'
                 <div style="display:flex;gap:8px;justify-content: center;width:100%" class="no-print">
                     <a
-                        href="/!/batch/taskman/${DataRow.sys_pk}/" class="no-print" style="cursor:pointer; border: none; text-decoration:none; outline: none; padding: 0 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"
+                        href="/!/batch/taskman/${DataRow.sys_guid}/" class="no-print" style="cursor:pointer; border: none; text-decoration:none; outline: none; padding: 0 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"
                     >
                         Tareas
                     </a>
                     <a
-                        href="./${DataRow.sys_pk}/" class="no-print" style="cursor:pointer; border: none; text-decoration:none; outline: none; padding: 0 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"
+                        href="./${DataRow.sys_guid}/" class="no-print" style="cursor:pointer; border: none; text-decoration:none; outline: none; padding: 0 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"
                     >
                         Editar
                     </a>
                     <button
-                        onclick="InduxsoftCrudlModel.Delete(${DataRow.sys_pk})" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"
+                        onclick="InduxsoftCrudlModel.Delete(\'${DataRow.sys_guid}\')" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem"
                     >
                         Eliminar
                     </button>
