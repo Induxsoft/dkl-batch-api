@@ -30,3 +30,12 @@
 
 ## Nota
 Es responsabilidad del proceso por lotes de actualizar el estado del trabajo, así como también notificar a cierto tiempo el estado que se encuentra un trabajo y de mandar un mensaje de finalización cuando  culmine dicho trabajo.
+
+## Manual del usuario
+
+El manual de usuario está disponible aquí: <https://docs.induxsoft.net/es/productos/v12/users/batch/>
+
+## Código fuente
+
+Todo el código está disponible en la carpeta [src](https://github.com/Induxsoft/dkl-batch-api/tree/main/src) 
+
