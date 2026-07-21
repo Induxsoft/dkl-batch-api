@@ -151,14 +151,23 @@ program "cron"
                         task,
                         start,
                         launched) values (@sys_guid,now(),now(),@task,"+sql_las_cycle_start+",@launched)",crontask_log)
-
+            do dbr.execute(db,"update crontask set last_cycle=(
+                    SELECT TRIM(l.`start`)
+                    FROM crontask_log l
+                    WHERE l.task = @task
+                    AND IFNULL(l.launched,0) = 1
+                    ORDER BY l.sys_pk DESC
+                    LIMIT 1
+                ) where sys_pk=@task",crontask_log)
     }
     funct_task::&db,&task
     {
         
         ref task_log=dbr.rec(db,"SELECT *,(l.`start`<=NOW())lanzar,l.start start_log
                         FROM crontask_log l  
-                        WHERE l.task=@sys_pk ORDER BY l.sys_pk DESC LIMIT 1",task)
+                        WHERE l.task=@sys_pk 
+                        -- AND IFNULL(l.`error`,0)=0
+                        ORDER BY l.sys_pk DESC LIMIT 1",task)
 
         using task
         {
