@@ -54,7 +54,7 @@ program "cron"
     @format_fecha="yyyy-MM-dd HH:mm:ss"//
     @format_fecha_bd="yyyy-MM-dd HH:mm:ss"
     @format_date="yyyy-MM-dd"
-    @minutos_expired=-5
+    @minutos_expired=5
     @segundos_redundante=50 
     /*
     status
@@ -163,11 +163,12 @@ program "cron"
     funct_task::&db,&task
     {
         
-        ref task_log=dbr.rec(db,"SELECT *,(l.`start`<=NOW())lanzar,l.start start_log
-                        FROM crontask_log l  
-                        WHERE l.task=@sys_pk 
-                        -- AND IFNULL(l.`error`,0)=0
-                        ORDER BY l.sys_pk DESC LIMIT 1",task)
+        ref task_log=dbr.rec(db,"SELECT *,(l.`start`<=NOW())lanzar,l.start start_log,
+                (l.`start` < DATE_SUB(NOW(), INTERVAL "+str(@minutos_expired)+" MINUTE))expirado
+                FROM crontask_log l  
+                WHERE l.task=@sys_pk 
+                -- AND IFNULL(l.`error`,0)=0
+                ORDER BY l.sys_pk DESC LIMIT 1",task)
 
         using task
         {
@@ -196,9 +197,8 @@ program "cron"
                     @"jstatus":@status_job_solicitado
                     @"params*":params_job
                 }
-                ref now=addMinutes(now(),@minutos_expired)
-
-                if compareTo(@@(task_log,"&start"),now) < 0
+                
+                if @@(task_log,"#expirado")
                 {
                     do dbr.execute(db,"update crontask_log set launched=1,error=1,log='Expired',sys_timestamp=now() where sys_pk=@sys_pk",task_log)
                 }
