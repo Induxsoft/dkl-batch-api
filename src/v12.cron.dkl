@@ -13,6 +13,7 @@ program "cron"
     do _map_function(-1, "System.DateTime", "CompareTo", "dtCompare","*System.DateTime","#")
     do _map_function(-1, "System.DateTime", "ToString", "toStr","System.String","$")
     do _map_function(-1, "System.DateTime", "AddSeconds", "addsec","System.Double","*")
+    do _map_function(-1, "System.Threading.Thread", "Sleep", "cron.sleep", "System.Int32", "void")
 
     toString::&datetime
     {
@@ -266,6 +267,11 @@ program "cron"
             ref task=@item(tasks,i)
             do funct_task(db,task)
         }
+        // Las excepciones atrapadas (p. ej. dentro de @count) se acumulan en la pila de la ejecución
+        // y este ciclo nunca termina: sin limpiarlas el proceso crece sin límite de memoria.
+        do clear_exceptions()
+        // Pausa entre vueltas para no ocupar un núcleo completo consultando crontask sin parar.
+        do cron.sleep(1000)
     }
 
     exception
