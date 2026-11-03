@@ -135,7 +135,7 @@ module "form.dk"
 
             div(class="d-flex align-items-center text-secondary #<ifstr(show_stt_text,'','d-none')>" id="status_text"){$"| #<program_st_text>"}
 
-            button(class="#<ifstr(show_btn_cancel,'','d-none')>" onclick="taskman.cancelTask()" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000; font-size:0.8rem" id="btn-cancel"){$"Cancelar tarea"}
+            button(class="#<ifstr(show_btn_cancel,'','d-none')>" onclick="taskman.cancelTask()" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: var(--et-header-bg, var(--ixt-header-bg, #F5F5F5)); color: var(--et-fg, var(--ixt-fg, #000)); font-size:0.8rem" id="btn-cancel"){$"Cancelar tarea"}
         }
 
         h6{"Parámetros: "}

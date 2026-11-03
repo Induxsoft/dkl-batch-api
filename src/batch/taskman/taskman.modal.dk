@@ -13,14 +13,14 @@ module "modals"
                 div(class="modal-header")
                 {
                     h5(class="modal-title" id="textomdl"){"Crear programa"}
-                    button(type="button" class="close" "data-bs-dismiss"="modal" "aria-label"="Close" style="border: 1px solid #F0F0F0;")
+                    button(type="button" class="close" "data-bs-dismiss"="modal" "aria-label"="Close" style="border: 1px solid var(--et-border, var(--ixt-border, #F0F0F0));")
                     {
                         span ("aria-hidden"="true") {$"&times;"}
                     }
                 }
                 div(class="modal-body" id="bdy")
                 {
-                    label(id="lblalert" class="d-flex" style="color:red"){""}
+                    label(id="lblalert" class="d-flex" style="color:var(--et-error, var(--ixt-error, red))"){""}
                     label{"Nombre del programa:"}
                     input(class="induxsoft-form-control" id="name_program" maxlength="32")
 
