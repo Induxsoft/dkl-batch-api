@@ -10,18 +10,18 @@
 {
     transition: .3s;
     outline: 1px solid transparent;
-    border: 1px solid #DDD;
+    border: 1px solid var(--et-border, var(--ixt-border, #DDD));
     text-decoration: none;
-    color: black;
+    color: var(--et-fg, var(--ixt-fg, black));
     align-items: center; 
     justify-content: center;
     display: flex;
 }
 .taskman-item:hover
 {
-    box-shadow: 3px 3px 9px 0 #DDD;
-    outline: 1px solid #DDD;
-    color: black;
+    box-shadow: var(--et-shadow, var(--ixt-shadow, 3px 3px 9px 0 var(--et-border, var(--ixt-border, #DDD))));
+    outline: 1px solid var(--et-border, var(--ixt-border, #DDD));
+    color: var(--et-fg, var(--ixt-fg, black));
 }
 .taskman-cursor
 {
